@@ -1,143 +1,151 @@
 import 'dart:async';
-
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pa2_kelompok07/core/helpers/logger/logger.dart';
+import 'package:pa2_kelompok07/core/models/notification_model.dart';
 
 @pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await NotificationService.instance.setupFlutterNotifications();
-  await NotificationService.instance.showNotification(message);
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await NotificationService.instance.initLocalNotifications();
+  await NotificationService.instance.showNotification(
+    AppNotification.fromRemoteMessage(message),
+  );
 }
 
 class NotificationService {
-  NotificationService._();
-  static final NotificationService instance = NotificationService._();
-  static final Logger _logger = Logger('NotificationService');
-  final _messaging = FirebaseMessaging.instance;
-  final _localNotifications = FlutterLocalNotificationsPlugin();
-  bool _isFlutterLocalNotificationsInitialized = false;
+  // Singleton pattern
+  NotificationService._internal();
+  static final NotificationService instance = NotificationService._internal();
 
+  // Dependencies
+  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
+  final Logger _logger = Logger('NotificationService');
+  bool _isLocalNotificationsInitialized = false;
+
+  // Android notification channel
+  static const AndroidNotificationChannel _androidChannel =
+      AndroidNotificationChannel(
+        'high_importance_channel',
+        'High Importance Notifications',
+        description:
+            'Channel for important notifications like chat and appointments',
+        importance: Importance.high,
+      );
+
+  // Inisialisasi utama
   Future<void> initialize() async {
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-    // Request permission
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     await _requestPermission();
+    await initLocalNotifications();
+    _setupMessageHandlers();
 
-    // Setup message handlers
-    await _setupMessageHandlers();
-
-    // Get FCM token
     final token = await _messaging.getToken();
     _logger.log('FCM Token: $token');
   }
 
+  // Meminta izin notifikasi
   Future<void> _requestPermission() async {
     final settings = await _messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
-      provisional: false,
-      announcement: false,
-      carPlay: false,
-      criticalAlert: false,
     );
-
     _logger.log('Permission status: ${settings.authorizationStatus}');
   }
 
-  Future<void> setupFlutterNotifications() async {
-    if (_isFlutterLocalNotificationsInitialized) {
-      return;
-    }
-
-    // android setup
-    const channel = AndroidNotificationChannel(
-      'high_importance_channel',
-      'High Importance Notifications',
-      description: 'This channel is used for important notifications.',
-      importance: Importance.high,
-    );
+  // Inisialisasi local notifications
+  Future<void> initLocalNotifications() async {
+    if (_isLocalNotificationsInitialized) return;
 
     await _localNotifications
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >()
-        ?.createNotificationChannel(channel);
+        ?.createNotificationChannel(_androidChannel);
 
-    const initializationSettingsAndroid = AndroidInitializationSettings(
+    const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
-
-    // ios setup
-    final initializationSettingsDarwin = DarwinInitializationSettings(
-      onDidReceiveLocalNotification: (id, title, body, payload) async {
-        // Handle iOS foreground notification
-      },
+    const iosSettings = DarwinInitializationSettings();
+    const initializationSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
     );
 
-    final initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsDarwin,
-    );
-
-    // flutter notification setup
     await _localNotifications.initialize(
       initializationSettings,
-      onDidReceiveNotificationResponse: (details) {},
+      onDidReceiveNotificationResponse: _handleNotificationResponse,
     );
 
-    _isFlutterLocalNotificationsInitialized = true;
+    _isLocalNotificationsInitialized = true;
   }
 
-  Future<void> showNotification(RemoteMessage message) async {
-    RemoteNotification? notification = message.notification;
-    AndroidNotification? android = message.notification?.android;
-    if (notification != null && android != null) {
-      await _localNotifications.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            'high_importance_channel',
-            'High Importance Notifications',
-            channelDescription:
-                'This channel is used for important notifications.',
-            importance: Importance.high,
-            priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+  // Menampilkan notifikasi dengan model
+  Future<void> showNotification(AppNotification notification) async {
+    final content = notification.content;
+    // final android = notification.content;
+    if (content.title == null || content.body == null) return;
+
+    await _localNotifications.show(
+      content.title.hashCode,
+      content.title,
+      content.body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _androidChannel.id,
+          _androidChannel.name,
+          channelDescription: _androidChannel.description,
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
         ),
-        payload: message.data.toString(),
-      );
-    }
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      payload: notification.data.toString(),
+    );
   }
 
-  Future<void> _setupMessageHandlers() async {
-    //foreground message
+  // Setup handler untuk foreground, background, dan saat app dibuka
+  void _setupMessageHandlers() {
     FirebaseMessaging.onMessage.listen((message) {
-      showNotification(message);
+      showNotification(AppNotification.fromRemoteMessage(message));
     });
 
-    // background message
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleBackgroundMessage);
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageAction);
 
-    // opened app
-    final initialMessage = await _messaging.getInitialMessage();
-    if (initialMessage != null) {
-      _handleBackgroundMessage(initialMessage);
+    _messaging.getInitialMessage().then((message) {
+      if (message != null) _handleMessageAction(message);
+    });
+  }
+
+  // Menangani aksi berdasarkan tipe notifikasi
+  void _handleMessageAction(RemoteMessage message) {
+    final appNotification = AppNotification.fromRemoteMessage(message);
+    switch (appNotification.data.type) {
+      case NotificationType.chat:
+        _logger.log(
+          'Opening chat screen with ID: ${appNotification.data.chatId}',
+        );
+        // TODO: Navigasi ke layar chat dengan chatId
+        break;
+      case NotificationType.appointment:
+        _logger.log(
+          'Opening appointment screen with ID: ${appNotification.data.appointmentId}',
+        );
+        // TODO: Navigasi ke layar janji temu dengan appointmentId
+        break;
     }
   }
 
-  void _handleBackgroundMessage(RemoteMessage message) {
-    if (message.data['type'] == 'chat') {
-      // open chat screen
-    }
+  // Menangani respons notifikasi (klik)
+  void _handleNotificationResponse(NotificationResponse response) {
+    _logger.log('Notification clicked with payload: ${response.payload}');
+    // TODO: Parsing payload dan navigasi sesuai kebutuhan
   }
 }

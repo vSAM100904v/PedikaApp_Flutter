@@ -58,4 +58,6 @@ class Config {
   // Endpoint tambahan untuk emergency contacts dan donations
   static const String emergencyContactAPI = "/api/admin/emergency-contact";
   static const String donationsAPI = "/api/donations";
+
+  static const String fallbackImage = "https://picsum.photos/200/300";
 }

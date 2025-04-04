@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pa2_kelompok07/core/services/notification_service.dart';
 import 'package:provider/provider.dart';
 import 'package:pa2_kelompok07/navigationBar/bottom_bar.dart';
 import 'package:pa2_kelompok07/provider/appointment_provider.dart';
@@ -16,7 +17,6 @@ import 'package:pa2_kelompok07/screens/auth/login_screen.dart';
 import 'package:pa2_kelompok07/screens/auth/register_screen.dart';
 import 'package:pa2_kelompok07/screens/beranda_screen.dart';
 import 'package:pa2_kelompok07/screens/dpmdppa/form_report.dart';
-import 'package:pa2_kelompok07/screens/dpmdppa/report_cancel_screen.dart';
 import 'package:pa2_kelompok07/screens/dpmdppa/report_screen.dart';
 import 'package:pa2_kelompok07/screens/laporan/laporan_anda_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -29,11 +29,12 @@ import 'package:pa2_kelompok07/screens/admin/pages/beranda/admin_dashboard.dart'
 import 'package:intl/date_symbol_data_local.dart';
 // Tambahkan import untuk AdminProvider
 import 'package:pa2_kelompok07/provider/admin_provider.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  await NotificationService.instance.initialize();
   // Mengambil token user yang sudah ada
   final userProvider = UserProvider();
   await userProvider.loadUserToken();

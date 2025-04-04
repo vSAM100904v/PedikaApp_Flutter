@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:pa2_kelompok07/config.dart';
+import 'package:pa2_kelompok07/core/helpers/logger/logger.dart';
 import 'package:pa2_kelompok07/model/appointment_request_model.dart';
 import 'package:pa2_kelompok07/model/appointment_response_model.dart';
 import 'package:pa2_kelompok07/model/auth/login_response_model.dart';
@@ -22,7 +23,7 @@ import 'package:path/path.dart';
 
 class APIService {
   static var client = http.Client();
-
+  final Logger _logger = Logger("API Service");
   Future<ResponseModel> fetchAllReports() async {
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'userToken');
@@ -144,6 +145,7 @@ class APIService {
     String email,
     String password,
   ) async {
+    _logger.log("PROCCESING LOGIN");
     final url = Uri.parse('${Config.apiUrl}${Config.forgotPassdword}');
 
     try {
@@ -162,7 +164,7 @@ class APIService {
         if (jsonResponse['data'] != null) {
           final User newUser = User.fromJson(jsonResponse['data']);
         } else {
-          print('No data found in response');
+          _logger.log('No data found in response');
         }
         return LoginResponseModel.fromJson(jsonResponse);
       } else if (response.statusCode == 400) {

@@ -7,6 +7,8 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:pa2_kelompok07/config.dart';
+import 'package:pa2_kelompok07/core/helpers/logger/text_logger.dart';
+import 'package:pa2_kelompok07/core/helpers/toasters/toast.dart';
 import 'package:pa2_kelompok07/screens/dpmdppa/report_screen.dart';
 import 'package:pa2_kelompok07/styles/color.dart';
 import 'package:http/http.dart' as http;
@@ -30,7 +32,7 @@ class FormReportDPMADPPA extends StatefulWidget {
 }
 
 class _FormReportDPMADPPAState extends State<FormReportDPMADPPA>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, TextLogger {
   int currentStep = 0;
   final _formKeyPengaduan = GlobalKey<FormState>();
   final _formKeyKorban = GlobalKey<FormState>();
@@ -571,7 +573,7 @@ class _FormReportDPMADPPAState extends State<FormReportDPMADPPA>
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Buat Laporan",
+          "Buat Laporan 3",
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -1277,31 +1279,61 @@ class _FormReportDPMADPPAState extends State<FormReportDPMADPPA>
   }
 
   Future<void> submitReport() async {
-    int? idKategoriKekerasan = selectedCategoryId;
-    DateTime? tanggalKejadian = tanggalPelaporan;
-    String? lokasiKasus = _kategoriLokasiKasus.text;
-    String? kronologi = _kronologiKasus.text;
-    String? provinsi = _provinsiKasus.text;
-    String? kabupaten = _kabupatenKasus.text;
-    String? kecamatan = _kecamatanKasus.text;
-    String? desa = _desaKasus.text;
-    String? alamatTkp = "$provinsi, $kabupaten, $kecamatan, $desa";
-    String? alamatDetailTkp = _alamatDetail.text;
+    // Validasi semua field wajib
+    final requiredFields = {
+      "Kategori Kekerasan": selectedCategoryId,
+      "Tanggal Kejadian": tanggalPelaporan,
+      "Lokasi Kasus": _kategoriLokasiKasus.text,
+      "Kronologi": _kronologiKasus.text,
+      "Gambar": imageFile,
+    };
 
+    final missingFields =
+        requiredFields.entries
+            .where(
+              (entry) =>
+                  entry.value == null ||
+                  (entry.value is String && (entry.value as String).isEmpty),
+            )
+            .map((entry) => entry.key)
+            .toList();
+
+    if (missingFields.isNotEmpty) {
+      errorLog("Field yang wajib diisi: ${missingFields.join(", ")}");
+
+      // Show error toast instead of dialog
+      context.toast.showError(
+        'Field berikut wajib diisi:\n${missingFields.join(", ")}',
+        title: 'Data Tidak Lengkap',
+      );
+      return;
+    }
+
+    // Proses data
     try {
       showLoadingAnimated(context);
 
-      var response = await APIService().submitReport(
-        idKategoriKekerasan!,
-        tanggalKejadian!,
-        lokasiKasus,
-        kronologi,
-        alamatDetailTkp,
-        alamatTkp,
+      final response = await APIService().submitReport(
+        selectedCategoryId!,
+        tanggalPelaporan!,
+        _kategoriLokasiKasus.text,
+        _kronologiKasus.text,
+        _alamatDetail.text,
+        "${_provinsiKasus.text}, ${_kabupatenKasus.text}, ${_kecamatanKasus.text}, ${_desaKasus.text}",
         [imageFile!],
       );
 
       if (response.code == 201) {
+        // Show success toast before navigation
+        context.toast.showSuccess(
+          'Laporan Anda telah berhasil dikirim',
+          title: 'Berhasil!',
+        );
+
+        // Delay navigation slightly to allow toast to be visible
+        await Future.delayed(const Duration(milliseconds: 1500));
+
+        // Navigasi setelah berhasil
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder:
@@ -1312,12 +1344,20 @@ class _FormReportDPMADPPAState extends State<FormReportDPMADPPA>
           ),
           (Route<dynamic> route) => false,
         );
-        print("Laporan berhasil dikirim.");
+        successLog("Laporan berhasil dikirim.");
       } else {
-        print("Gagal mengirim laporan: ${response.message}");
+        errorLog("Gagal mengirim laporan: ${response.message}");
+        context.toast.showError(
+          response.message ?? "Terjadi kesalahan saat mengirim laporan",
+          title: 'Gagal',
+        );
       }
-    } catch (e) {
-      print('Error saat mengirim laporan: $e');
+    } catch (e, stackTrace) {
+      errorLog('Error saat mengirim laporan: $e\n$stackTrace');
+      context.toast.showError(
+        "Terjadi kesalahan sistem saat mengirim laporan",
+        title: 'Error Sistem',
+      );
     } finally {
       closeLoadingDialog(context);
     }

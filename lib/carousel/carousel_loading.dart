@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:pa2_kelompok07/config.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:pa2_kelompok07/styles/color.dart';
 import '../model/content_model.dart';
@@ -82,10 +84,16 @@ class _CarouselLoadingState extends State<CarouselLoading> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(20),
-                  child: Image.network(
-                    content.imageContent,
+                  child: CachedNetworkImage(
+                    imageUrl: content.imageContent,
                     fit: BoxFit.cover,
                     width: MediaQuery.of(context).size.width,
+                    errorWidget:
+                        (context, url, error) => CachedNetworkImage(
+                          imageUrl: Config.fallbackImage,
+                          fit: BoxFit.cover,
+                          width: MediaQuery.of(context).size.width,
+                        ),
                   ),
                 ),
                 Padding(

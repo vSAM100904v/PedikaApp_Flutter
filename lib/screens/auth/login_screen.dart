@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pa2_kelompok07/core/helpers/logger/text_logger.dart';
+import 'package:pa2_kelompok07/core/helpers/toasters/toast.dart';
 import 'package:provider/provider.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 import 'package:pa2_kelompok07/provider/internet_provider.dart';
@@ -14,7 +16,7 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage> with TextLogger {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -274,6 +276,7 @@ class _LoginPageState extends State<LoginPage> {
                                               _usernameController.text,
                                               _passwordController.text,
                                             );
+                                        debugLog("Debug print Succes");
                                         if (loginSuccess) {
                                           // Jika login berhasil, cek role user
                                           if (userProvider.user != null &&
@@ -294,14 +297,11 @@ class _LoginPageState extends State<LoginPage> {
                                             );
                                           }
                                         } else {
+                                          print("Error From Here");
                                           throw Exception('Login Failed');
                                         }
                                       } catch (e) {
-                                        openSnackBar(
-                                          context,
-                                          e.toString(),
-                                          Colors.red,
-                                        );
+                                        context.toast.showError(e.toString());
                                       } finally {
                                         closeLoadingDialog(context);
                                       }

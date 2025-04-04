@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:pa2_kelompok07/core/helpers/logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config.dart';
 import '../model/auth/login_request_model.dart';
@@ -15,7 +16,7 @@ class UserProvider with ChangeNotifier {
   String? _userToken;
   final _storage = const FlutterSecureStorage();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
+  final Logger _logger = Logger('UserProvider');
   User? get user => _user;
   bool get isLoggedIn => _userToken != null;
 
@@ -38,7 +39,7 @@ class UserProvider with ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      print('Error login: $e');
+      _logger.log('Error login: $e');
       return false;
     }
   }
