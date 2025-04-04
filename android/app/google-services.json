@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "246373093380",
+    "project_id": "pa2-kelompok07",
+    "storage_bucket": "pa2-kelompok07.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:246373093380:android:a0542655c2ecf63a80a551",
+        "android_client_info": {
+          "package_name": "com.example.pa2_kelompok07"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgeAI-XY9MVgatulaeLefJnPDMQU3W6bc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
