@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pa2_kelompok07/core/helpers/logger/text_logger.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pa2_kelompok07/carousel/carousel_loading.dart';
@@ -17,7 +18,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with TextLogger {
   late var width = MediaQuery.sizeOf(context).width;
   late var height = MediaQuery.sizeOf(context).height;
 
@@ -26,6 +27,10 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
+
+    debugLog(
+      "Usser ${userProvider.isLoggedIn ? " User telah login" : "user belum login"} ",
+    );
     return Scaffold(
       appBar: AppBar(
         title: Row(

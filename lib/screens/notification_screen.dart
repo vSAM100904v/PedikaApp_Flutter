@@ -17,22 +17,20 @@ class _NotificationPageState extends State<NotificationPage> {
       appBar: AppBar(
         title: Align(
           alignment: Alignment.center,
-          child: Text("Notifikasi", style:
-          TextStyle(
-            color: AppColor.descColor,
-            fontSize: 17,
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.bold,
-          ),
+          child: Text(
+            "NotifikasiIII",
+            style: TextStyle(
+              color: AppColor.descColor,
+              fontSize: 17,
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         backgroundColor: AppColor.primaryColor,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Colors.white,
-          ),
-          onPressed: (){
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
             Navigator.of(context).pop();
           },
         ),
@@ -43,11 +41,12 @@ class _NotificationPageState extends State<NotificationPage> {
           children: [
             Padding(
               padding: const EdgeInsets.all(15),
-              child: Text("Status Laporan", style: TextStyle(
-                color: AppColor.primaryColor,
-              ),),
+              child: Text(
+                "Status Laporan",
+                style: TextStyle(color: AppColor.primaryColor),
+              ),
             ),
-            Divider(height: 1, color: Colors.grey[400],),
+            Divider(height: 1, color: Colors.grey[400]),
             Padding(
               padding: const EdgeInsets.all(15),
               child: Container(
@@ -62,47 +61,61 @@ class _NotificationPageState extends State<NotificationPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Laporan DPMDPPA", style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 14,
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w500,
-                    ),),
-                    Text("Kami ingin memberitahukan bahwa kami telah menerima dan  mengkonfirmasi laporan kasus yang Anda masukkan kepada Kantor Polisi Kabupaten toba. Kasus dengan nomor referensi 12AB370 telah ditinjau dan akan segera menjadi prioritas dalam penyelidikan kami."),
-                    const SizedBox(height: 10,),
-                    Text("21-11-2023", style: TextStyle(
-                      fontSize: 14,
-                      color: AppColor.primaryColor,
-                    ),),
+                    Text(
+                      "Laporan DPMDPPA",
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 14,
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      "Kami ingin memberitahukan bahwa kami telah menerima dan  mengkonfirmasi laporan kasus yang Anda masukkan kepada Kantor Polisi Kabupaten toba. Kasus dengan nomor referensi 12AB370 telah ditinjau dan akan segera menjadi prioritas dalam penyelidikan kami.",
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      "21-11-2023",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColor.primaryColor,
+                      ),
+                    ),
                     Row(
                       children: [
                         Text("03:45"),
                         Expanded(child: Container()),
                         ElevatedButton(
-                            style: ButtonStyle(
-                                foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
-                                backgroundColor: MaterialStateProperty.all<Color>(AppColor.primaryColor),
-                                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                                    RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(5),
-                                        side: BorderSide(color: AppColor.primaryColor)
-                                    )
-                                )
+                          style: ButtonStyle(
+                            foregroundColor: MaterialStateProperty.all<Color>(
+                              Colors.white,
                             ),
-                            onPressed: () {
-                              print("Rincian");
-                            },
-                            child: Text(
-                                "Lihat Rincian".toUpperCase(),
-                                style: const TextStyle(fontSize: 14)
-                            )
+                            backgroundColor: MaterialStateProperty.all<Color>(
+                              AppColor.primaryColor,
+                            ),
+                            shape: MaterialStateProperty.all<
+                              RoundedRectangleBorder
+                            >(
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5),
+                                side: BorderSide(color: AppColor.primaryColor),
+                              ),
+                            ),
+                          ),
+                          onPressed: () {
+                            print("Rincian");
+                          },
+                          child: Text(
+                            "Lihat Rincian".toUpperCase(),
+                            style: const TextStyle(fontSize: 14),
+                          ),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),

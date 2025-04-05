@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:pa2_kelompok07/core/helpers/toasters/toast.dart';
 import 'package:pa2_kelompok07/screens/appointment/appointment_screen.dart';
 import 'package:pa2_kelompok07/screens/laporan/component/report_list_enter.dart';
 import 'package:pa2_kelompok07/screens/laporan/laporan_anda_screen.dart';
@@ -27,29 +27,31 @@ class _ReportCancelScreenState extends State<ReportCancelScreen> {
     showLoadingAnimated(context);
     try {
       await APIService().cancelReport(widget.noRegistrasi, _cancelReport.text);
-      Fluttertoast.showToast(
-        msg: "Laporan berhasil dibatalkan",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
+      context.toast.showSuccess("Laporan berhasil dibatalkan");
+      // Fluttertoast.showToast(
+      //   msg: "Laporan berhasil dibatalkan",
+      //   toastLength: Toast.LENGTH_SHORT,
+      //   gravity: ToastGravity.BOTTOM,
+      //   timeInSecForIosWeb: 1,
+      //   backgroundColor: Colors.green,
+      //   textColor: Colors.white,
+      //   fontSize: 16.0,
+      // );
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const LaporanScreen()),
         (Route<dynamic> route) => false,
       );
     } catch (e) {
-      Fluttertoast.showToast(
-        msg: "Laporan gagal dibatalkan: $e",
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
+      context.toast.showError("Laporan gagal dibatalkan: $e");
+      // Fluttertoast.showToast(
+      //   msg: "Laporan gagal dibatalkan: $e",
+      //   toastLength: Toast.LENGTH_LONG,
+      //   gravity: ToastGravity.BOTTOM,
+      //   timeInSecForIosWeb: 1,
+      //   backgroundColor: Colors.red,
+      //   textColor: Colors.white,
+      //   fontSize: 16.0,
+      // );
     } finally {
       closeLoadingDialog(context);
     }

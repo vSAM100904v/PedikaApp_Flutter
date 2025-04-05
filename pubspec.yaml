@@ -62,7 +62,8 @@ dependencies:
   flutter_gif: ^0.0.4
   timeago: ^3.6.1
   collection: ^1.18.0
-  fluttertoast: ^8.2.5
+  # Remove  fluttertoast causes make app crashed like this issues: https://github.com/ponnamkarthik/FlutterToast/issues/532#issue-2484553223 and migrating to awesome_snackbar_content
+  # fluttertoast: ^8.2.5
   video_player: ^2.8.6
   path: ^1.8.3
 

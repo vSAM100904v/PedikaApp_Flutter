@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pa2_kelompok07/core/services/notification_service.dart';
 import 'package:provider/provider.dart';
 import 'package:pa2_kelompok07/model/auth/login_request_model.dart';
 import 'package:pa2_kelompok07/services/api_service.dart';
@@ -492,6 +493,7 @@ class _RegisterPageState extends State<RegisterPage> {
         password,
         fullName,
         noTelp,
+        await NotificationService.instance.getStoredFcmToken() ?? "empty_token",
       );
 
       if (user.success == 200) {

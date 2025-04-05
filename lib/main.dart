@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:pa2_kelompok07/core/services/notification_service.dart';
 import 'package:provider/provider.dart';
@@ -28,12 +30,13 @@ import 'package:pa2_kelompok07/screens/splash_screen.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/beranda/admin_dashboard.dart';
 import 'package:intl/date_symbol_data_local.dart';
 // Tambahkan import untuk AdminProvider
+
 import 'package:pa2_kelompok07/provider/admin_provider.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp();
+
   await NotificationService.instance.initialize();
   // Mengambil token user yang sudah ada
   final userProvider = UserProvider();
@@ -48,16 +51,15 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => UserProvider()..loadUserToken()),
+        ChangeNotifierProvider(create: (_) => userProvider),
         ChangeNotifierProvider(create: (_) => SignInProvider()),
         ChangeNotifierProvider(create: (_) => InternetProvider()),
         ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProvider(create: (_) => ReportProvider()),
         ChangeNotifierProvider(create: (_) => AppointmentProvider()),
         // Provider baru untuk admin
-        ChangeNotifierProvider(
-          create: (_) => AdminProvider()..loadAdminToken(),
-        ),
+        ChangeNotifierProvider(create: (_) => adminProvider),
+        Provider(create: (_) => NotificationService.instance),
       ],
       child: const MyApp(),
     ),

@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:pa2_kelompok07/core/helpers/toasters/toast.dart';
 import 'package:pa2_kelompok07/screens/appointment/appointment_screen.dart';
 import 'package:pa2_kelompok07/services/api_service.dart';
 import 'package:pa2_kelompok07/utils/loading_dialog.dart';
@@ -62,30 +62,32 @@ class _CancelAppointmentScreenState extends State<CancelAppointmentScreen> {
         widget.appointmentId,
         _cancelJanjiTemu.text,
       );
-      Fluttertoast.showToast(
-        msg: "Janji temu berhasil dibatalkan",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
+      context.toast.showSuccess("Janji temu berhasil dibatalkan");
+      // Fluttertoast.showToast(
+      //   msg: "Janji temu berhasil dibatalkan",
+      //   toastLength: Toast.LENGTH_SHORT,
+      //   gravity: ToastGravity.BOTTOM,
+      //   timeInSecForIosWeb: 1,
+      //   backgroundColor: Colors.green,
+      //   textColor: Colors.white,
+      //   fontSize: 16.0,
+      // );
       closeLoadingDialog(context);
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const AppointmentPage()),
         (Route<dynamic> route) => false,
       );
     } catch (e) {
-      Fluttertoast.showToast(
-        msg: "Janji temu gagal dibatalkan",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
+      context.toast.showError("Janji temu gagal dibatalkan: $e");
+      // Fluttertoast.showToast(
+      //   msg: "Janji temu gagal dibatalkan",
+      //   toastLength: Toast.LENGTH_SHORT,
+      //   gravity: ToastGravity.BOTTOM,
+      //   timeInSecForIosWeb: 1,
+      //   backgroundColor: Colors.red,
+      //   textColor: Colors.white,
+      //   fontSize: 16.0,
+      // );
     }
   }
 

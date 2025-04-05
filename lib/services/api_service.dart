@@ -98,6 +98,7 @@ class APIService {
     String password,
     String fullName,
     String phoneNumber,
+    String notificationToken,
   ) async {
     final url = Uri.parse('${Config.apiUrl}${Config.registerAPI}');
 
@@ -112,6 +113,7 @@ class APIService {
           'email': email,
           'phone_number': phoneNumber,
           'password': password,
+          'notification_token': notificationToken,
         }),
       );
 
@@ -737,6 +739,37 @@ class APIService {
       }
     } else {
       throw Exception('Failed to reach the server');
+    }
+  }
+
+  Future<void> sendTokenToServer(
+    String notificationToken,
+    String authorizationToken,
+  ) async {
+    try {
+      _logger.log(
+        'Attempting to send FCM token to server with Params FCM TOKEN:$notificationToken, Bearer Token:$authorizationToken',
+      );
+      final url = Uri.parse(
+        '${Config.apiUrl}${Config.updateNotificationToken}?notification_token=$notificationToken',
+      );
+
+      _logger.log('Sending FCM token to server: $url');
+      final response = await client.get(
+        url,
+        headers: {
+          HttpHeaders.contentTypeHeader: 'application/json',
+          HttpHeaders.authorizationHeader: 'Bearer $authorizationToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        _logger.log('FCM token successfully sent to server');
+      } else {
+        _logger.log('Failed to send FCM token: ${response.body}');
+      }
+    } catch (e) {
+      _logger.log('Error sending FCM token to server: $e');
     }
   }
 }

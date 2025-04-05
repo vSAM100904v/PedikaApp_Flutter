@@ -1,10 +1,13 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:pa2_kelompok07/core/helpers/logger/logger.dart';
+import 'package:pa2_kelompok07/core/services/notification_service.dart';
+import 'package:pa2_kelompok07/screens/admin/pages/beranda/admin_dashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config.dart';
 import '../model/auth/login_request_model.dart';
@@ -21,8 +24,19 @@ class UserProvider with ChangeNotifier {
   bool get isLoggedIn => _userToken != null;
 
   int? get userId => _user?.id;
-
+  bool _isTokenBeingHandled = false;
   static var client = http.Client();
+
+  UserProvider() {
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await loadUserToken();
+    if (isLoggedIn) {
+      await _checkAndUpdateTokenOnLogin();
+    }
+  }
 
   void setUser(User user) {
     _user = user;
@@ -37,6 +51,7 @@ class UserProvider with ChangeNotifier {
       await setUserToken(_userToken!);
       await setUserDetails(_user!);
       notifyListeners();
+      await _checkAndUpdateTokenOnLogin();
       return true;
     } catch (e) {
       _logger.log('Error login: $e');
@@ -51,13 +66,16 @@ class UserProvider with ChangeNotifier {
     String phoneNumber,
   ) async {
     try {
+      final fcmToken = await NotificationService.instance.getStoredFcmToken();
       print("Attempting to register with phone number: $phoneNumber");
       final response = await APIService().register(
         email,
         password,
         fullName,
         phoneNumber,
+        fcmToken ?? "empty_token",
       );
+
       if (response.success != 200) {
         print(
           "Failed to register, server responded with status code: ${response.success} and body: ${response.data}",
@@ -90,6 +108,7 @@ class UserProvider with ChangeNotifier {
     if (userJson != null) {
       Map<String, dynamic> userMap = jsonDecode(userJson);
       _user = User.fromJson(userMap);
+      await _updateUserNotificationToken();
     }
   }
 
@@ -100,6 +119,23 @@ class UserProvider with ChangeNotifier {
       await loadUserDetails();
     }
     notifyListeners();
+  }
+
+  Future<void> _updateUserNotificationToken() async {
+    if (_user == null) return;
+
+    try {
+      final storedFcmToken = await _storage.read(key: 'fcm_token');
+      if (storedFcmToken != null &&
+          storedFcmToken != _user!.notificationToken) {
+        _user = _user!.copyWith(notificationToken: storedFcmToken);
+
+        await setUserDetails(_user!);
+        _logger.log('Updated user notification token: $storedFcmToken');
+      }
+    } catch (e) {
+      _logger.log('Error updating user notification token: $e');
+    }
   }
 
   Future<void> logout() async {
@@ -119,6 +155,37 @@ class UserProvider with ChangeNotifier {
     _userToken = null;
     _user = null;
 
+    notifyListeners();
+  }
+
+  Future<void> _checkAndUpdateTokenOnLogin() async {
+    if (!isLoggedIn || userId == null || _isTokenBeingHandled) {
+      _logger.log(
+        _isTokenBeingHandled
+            ? "Token already being handled"
+            : "User not logged in, token stored locally only $isLoggedIn $userId",
+      );
+      return;
+    }
+
+    try {
+      final storedToken = await _storage.read(key: 'fcm_token');
+      if (storedToken != null) {
+        await APIService().sendTokenToServer(storedToken, _userToken!);
+        await _updateUserNotificationToken();
+        await setUserDetails(_user!);
+      }
+    } catch (e) {
+      _logger.log('Error checking token on login: $e');
+    } finally {
+      _isTokenBeingHandled = false;
+    }
+  }
+
+  Future<void> updateFcmToken(String newToken) async {
+    await _storage.write(key: 'fcm_token', value: newToken);
+
+    await APIService().sendTokenToServer(newToken, _userToken!);
     notifyListeners();
   }
 }

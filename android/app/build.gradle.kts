@@ -1,14 +1,18 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // Flutter Gradle Plugin harus diterapkan setelah plugin Android dan Kotlin.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
+    
 }
 
 dependencies {
   // Import the Firebase BoM
-  implementation(platform("com.google.firebase:firebase-bom:33.11.0"))
+  implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
 
 
   // TODO: Add the dependencies for Firebase products you want to use
@@ -25,9 +29,15 @@ dependencies {
   implementation("androidx.window:window-java:1.0.0")
 }
 
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.example.pa2_kelompok07"
-     compileSdk = 35
+    compileSdk = 35
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -55,9 +65,17 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = "vpn_sistemkode" // Directly input the value
+            keyPassword = "tlm221lv63" // Directly input the value
+            storeFile = file("C:/Users/ASUS/vpn-sistemkode.jks") // Directly input the value
+            storePassword = "tlm221lv63" // Directly input the value
+        }
+    }
     buildTypes {
-        getByName("release") {
-            // TODO: Tambahkan konfigurasi signing untuk build release.
+        getByName("debug") {
+            // TODO: Tambahkan konfigurasi signing untuk build debug.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
