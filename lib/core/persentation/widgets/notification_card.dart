@@ -2,25 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pa2_kelompok07/core/constant/constant.dart';
 import 'package:pa2_kelompok07/core/helpers/hooks/responsive_sizes.dart';
+import 'package:pa2_kelompok07/core/models/notification_channel_model.dart';
+import 'package:pa2_kelompok07/core/utils/notification_type_util.dart';
 
 class NotificationCard extends StatelessWidget {
   final String title;
-  final String sender;
+  final NotificationType type;
   final DateTime time;
-  final IconData icon;
-  final Color iconColor;
   final bool isRead;
   final VoidCallback? onTap;
+  final Map<String, dynamic>? data;
 
   const NotificationCard({
     super.key,
     required this.title,
-    required this.sender,
+    required this.type,
     required this.time,
-    this.icon = Icons.notifications,
-    this.iconColor = Colors.purple,
-    this.isRead = false,
+    required this.isRead,
     this.onTap,
+    this.data,
   });
 
   String _formatTime(DateTime time) {
@@ -86,12 +86,12 @@ class NotificationCard extends StatelessWidget {
                           Matrix4.identity()
                             ..scale(isRead ? 0.9 : 1.0, isRead ? 0.9 : 1.0),
                       child: CircleAvatar(
-                        backgroundColor: iconColor.withOpacity(
-                          isRead ? 0.7 : 1.0,
-                        ),
+                        backgroundColor: NotificationTypeUtils.getColor(
+                          type,
+                        ).withOpacity(isRead ? 0.7 : 1.0),
                         radius: responsive.space(SizeScale.xxl),
                         child: Icon(
-                          icon,
+                          NotificationTypeUtils.getIcon(type),
                           color: Colors.white,
                           size: responsive.fontSize(SizeScale.xl),
                         ),
@@ -149,7 +149,8 @@ class NotificationCard extends StatelessWidget {
                       ),
                       SizedBox(height: responsive.space(SizeScale.xs)),
                       Text(
-                        sender,
+                        NotificationTypeUtils.getSender(type),
+
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurface.withOpacity(0.6),
                         ),

@@ -1,0 +1,356 @@
+import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
+import 'package:pa2_kelompok07/core/constant/constant.dart';
+import 'package:pa2_kelompok07/core/helpers/hooks/responsive_sizes.dart';
+import 'package:pa2_kelompok07/model/report/tracking_report_model.dart';
+import 'package:pa2_kelompok07/styles/color.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+class TrackingCard extends StatelessWidget {
+  final TrackingLaporanModel tracking;
+  final bool isLatest;
+  final VoidCallback? onTap;
+
+  const TrackingCard({
+    super.key,
+    required this.tracking,
+    this.isLatest = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final responsive = context.responsive;
+    final theme = Theme.of(context);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      margin: EdgeInsets.only(
+        bottom: responsive.space(SizeScale.sm),
+        left: responsive.space(SizeScale.md),
+        right: responsive.space(SizeScale.md),
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(
+          responsive.borderRadius(SizeScale.sm),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(
+            responsive.borderRadius(SizeScale.sm),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(responsive.space(SizeScale.md)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with time and status indicator
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Timeline indicator
+                    _buildTimelineIndicator(context),
+                    SizedBox(width: responsive.space(SizeScale.md)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Time and latest badge
+                          Row(
+                            children: [
+                              Text(
+                                DateFormat('HH:mm').format(tracking.updatedAt),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.7),
+                                ),
+                              ),
+                              if (isLatest) ...[
+                                SizedBox(width: responsive.space(SizeScale.xs)),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: responsive.space(SizeScale.xs),
+                                    vertical:
+                                        responsive.space(SizeScale.xs) / 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(
+                                      responsive.borderRadius(SizeScale.xs),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'TERBARU',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          SizedBox(height: responsive.space(SizeScale.xs)),
+                          // Tracking description
+                          Text(
+                            tracking.keterangan,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                // Documents section
+                if (tracking.documents.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: responsive.space(SizeScale.xxl),
+                      top: responsive.space(SizeScale.sm),
+                    ),
+                    child: _buildDocumentsSection(context),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimelineIndicator(BuildContext context) {
+    final responsive = context.responsive;
+    final theme = Theme.of(context);
+
+    return Column(
+      children: [
+        Container(
+          width: 2,
+          height: responsive.space(SizeScale.sm),
+          color: theme.colorScheme.outline.withOpacity(0.2),
+        ),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: responsive.space(SizeScale.md),
+          height: responsive.space(SizeScale.md),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color:
+                isLatest
+                    ? AppColors.primary
+                    : theme.colorScheme.primaryContainer,
+            border: Border.all(
+              color:
+                  isLatest
+                      ? AppColors.primary.withOpacity(0.3)
+                      : theme.colorScheme.outline.withOpacity(0.3),
+              width: 2,
+            ),
+          ),
+          child: Icon(
+            isLatest ? Icons.check_circle : Icons.circle,
+            size: responsive.fontSize(SizeScale.sm),
+            color:
+                isLatest ? Colors.white : theme.colorScheme.onPrimaryContainer,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDocumentsSection(BuildContext context) {
+    final responsive = context.responsive;
+    final theme = Theme.of(context);
+    final validDocuments =
+        tracking.documents.where((url) => _isValidUrl(url)).toList();
+
+    if (validDocuments.isEmpty) return const SizedBox();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Dokumen Pendukung:',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withOpacity(0.6),
+          ),
+        ),
+        SizedBox(height: responsive.space(SizeScale.xs)),
+        GridView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          shrinkWrap: true,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: validDocuments.length > 1 ? 2 : 1,
+            crossAxisSpacing: responsive.space(SizeScale.xs),
+            mainAxisSpacing: responsive.space(SizeScale.xs),
+            childAspectRatio: 1.5,
+          ),
+          itemCount: validDocuments.length,
+          itemBuilder: (context, index) {
+            final url = validDocuments[index];
+            return _buildDocumentItem(context, url);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDocumentItem(BuildContext context, String url) {
+    final responsive = context.responsive;
+    final theme = Theme.of(context);
+
+    return GestureDetector(
+      onTap: () => _handleDocumentTap(url),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(
+            responsive.borderRadius(SizeScale.xs),
+          ),
+          color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(
+            responsive.borderRadius(SizeScale.xs),
+          ),
+          child: Stack(
+            children: [
+              if (url.endsWith('.pdf'))
+                _buildPdfPreview(context, url)
+              else
+                _buildImagePreview(context, url),
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: EdgeInsets.all(responsive.space(SizeScale.xs)),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.7),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        url.endsWith('.pdf')
+                            ? Icons.picture_as_pdf
+                            : Icons.image,
+                        size: responsive.fontSize(SizeScale.sm),
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: responsive.space(SizeScale.xs)),
+                      Expanded(
+                        child: Text(
+                          url.endsWith('.pdf') ? 'PDF Document' : 'Image',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: Colors.white,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPdfPreview(BuildContext context, String url) {
+    final responsive = context.responsive;
+
+    return Container(
+      color: AppColors.error.withOpacity(0.1),
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.picture_as_pdf,
+            size: responsive.fontSize(SizeScale.xxl),
+            color: AppColors.error,
+          ),
+          SizedBox(height: responsive.space(SizeScale.xs)),
+          Text(
+            'PDF File',
+            style: TextStyle(
+              fontSize: responsive.fontSize(SizeScale.sm),
+              color: AppColors.error,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImagePreview(BuildContext context, String url) {
+    return CachedNetworkImage(
+      imageUrl: url,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      placeholder:
+          (context, url) => Container(
+            color: Colors.grey[200],
+            child: const Center(child: CircularProgressIndicator()),
+          ),
+      errorWidget:
+          (context, url, error) => Container(
+            color: Colors.grey[200],
+            child: Center(
+              child: Icon(
+                Icons.broken_image,
+                size: context.responsive.fontSize(SizeScale.xxl),
+                color: Colors.grey[400],
+              ),
+            ),
+          ),
+    );
+  }
+
+  bool _isValidUrl(String url) {
+    if (url.isEmpty) return false;
+    try {
+      return Uri.parse(url).isAbsolute;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> _handleDocumentTap(String url) async {
+    if (url.endsWith('.pdf')) {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } else {
+      // Show image in full screen
+      // You can implement a image viewer here
+    }
+  }
+}

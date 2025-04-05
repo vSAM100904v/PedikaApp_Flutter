@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:pa2_kelompok07/core/services/notification_service.dart';
+import 'package:pa2_kelompok07/screens/admin/pages/Laporan/detail_report_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:pa2_kelompok07/navigationBar/bottom_bar.dart';
 import 'package:pa2_kelompok07/provider/appointment_provider.dart';
@@ -98,6 +99,10 @@ class MyApp extends StatelessWidget {
         '/prosedur-janji-temu': (context) => const AppointmentProcedure(),
         '/notifikasi': (context) => const NotificationScreen(),
         '/admin-dashboard': (context) => const Beranda(),
+        '/detail-laporan': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as String;
+          return DetailReportScreen(noRegistrasi: args);
+        },
       },
     );
   }

@@ -3,11 +3,15 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pa2_kelompok07/core/constant/constant.dart';
 import 'package:pa2_kelompok07/core/helpers/logger/logger.dart';
-import 'package:pa2_kelompok07/core/models/notification_model.dart';
+import 'package:pa2_kelompok07/core/models/notification_channel_model.dart';
+import 'package:pa2_kelompok07/main.dart';
+import 'package:pa2_kelompok07/screens/admin/pages/Laporan/detail_report_screen.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -45,7 +49,6 @@ class NotificationService {
 
   // Inisialisasi utama
   Future<void> initialize() async {
-    print('Initializing notification service...');
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     await _requestPermission();
     await initLocalNotifications();
@@ -100,6 +103,9 @@ class NotificationService {
 
     _logger.log('Received notification: ${notification.toString()}');
 
+    final notificationId =
+        notification.receivedTime.millisecondsSinceEpoch.hashCode.abs() %
+        2147483647;
     // Customize notification based on type
     final androidDetails = AndroidNotificationDetails(
       _androidChannel.id,
@@ -124,7 +130,7 @@ class NotificationService {
     );
 
     await _localNotifications.show(
-      notification.receivedTime.millisecondsSinceEpoch,
+      notificationId,
       content.title,
       content.body,
       NotificationDetails(
@@ -163,7 +169,6 @@ class NotificationService {
     }
   }
 
-  // Setup handler untuk foreground, background, dan saat app dibuka
   void _setupMessageHandlers() {
     FirebaseMessaging.onMessage.listen((message) {
       showNotification(AppNotification.fromRemoteMessage(message));
@@ -178,23 +183,88 @@ class NotificationService {
 
   void _handleMessageAction(RemoteMessage message) {
     final appNotification = AppNotification.fromRemoteMessage(message);
-    _logger.log('Unknown notification type: ${appNotification.data}');
-    switch (appNotification.data.type) {
+    _logger.log('Handling notification action: ${appNotification.data}');
+    _navigateBasedOnNotification(appNotification);
+  }
+
+  void _handleNotificationResponse(NotificationResponse response) {
+    _logger.log('Notification clicked with payload: ${response.payload}');
+    if (response.payload == null) return;
+
+    try {
+      final payload = jsonDecode(response.payload!);
+      final type = payload['type'] as String?;
+      final data = payload['data'] as Map<String, dynamic>?;
+
+      if (type == null || data == null) return;
+
+      switch (type) {
+        case 'report_status':
+          final reportData = data['reportData'] as Map<String, dynamic>?;
+          if (reportData != null) {
+            final reportId = reportData['reportId'] as String?;
+            if (reportId != null) {
+              _navigateToReportDetail(reportId);
+            }
+          }
+          break;
+        case 'chat':
+          final chatId = data['chatId'] as String?;
+          if (chatId != null) {
+            _logger.log('Navigating to chat screen with ID: $chatId');
+            // TODO: Navigasi ke layar chat
+          }
+          break;
+        case 'appointment':
+          final appointmentId = data['appointmentId'] as String?;
+          if (appointmentId != null) {
+            _logger.log(
+              'Navigating to appointment screen with ID: $appointmentId',
+            );
+            // TODO: Navigasi ke layar appointment
+          }
+          break;
+        default:
+          _logger.log('Unknown notification type: $type');
+      }
+    } catch (e) {
+      _logger.log('Error parsing notification payload: $e');
+    }
+  }
+
+  void _navigateBasedOnNotification(AppNotification notification) {
+    switch (notification.data.type) {
+      case NotificationType.reportStatus:
+        if (notification.data.reportStatusData != null) {
+          final reportId = notification.data.reportStatusData!.reportId;
+          _navigateToReportDetail(reportId);
+        }
+        break;
       case NotificationType.chat:
-        _logger.log(
-          'Opening chat screen with ID: ${appNotification.data.chatId}',
-        );
-        // TODO: Navigasi ke layar chat dengan chatId
+        _logger.log('Opening chat screen with ID: ${notification.data.chatId}');
+        // TODO: Navigasi ke layar chat
         break;
       case NotificationType.appointment:
         _logger.log(
-          'Opening appointment screen with ID: ${appNotification.data.appointmentId}',
+          'Opening appointment screen with ID: ${notification.data.appointmentId}',
         );
-        // TODO: Navigasi ke layar janji temu dengan appointmentId
+        // TODO: Navigasi ke layar appointment
         break;
-      default:
-        _logger.log('Unknown notification type: ${appNotification.data.type}');
-        break;
+    }
+  }
+
+  void _navigateToReportDetail(String reportId) {
+    _logger.log('Navigating to report detail with ID: $reportId');
+
+    final context = navigatorKey.currentContext;
+    if (context != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => DetailReportScreen(noRegistrasi: reportId),
+        ),
+      );
+    } else {
+      _logger.log('No context available for navigation');
     }
   }
 
@@ -229,10 +299,5 @@ class NotificationService {
   // Method untuk mendapatkan token yang tersimpan
   Future<String?> getStoredFcmToken() async {
     return await _secureStorage.read(key: 'fcm_token');
-  }
-
-  void _handleNotificationResponse(NotificationResponse response) {
-    _logger.log('Notification clicked with payload: ${response.payload}');
-    // TODO: Parsing payload dan navigasi sesuai kebutuhan
   }
 }

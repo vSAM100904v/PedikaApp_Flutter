@@ -26,6 +26,7 @@ class UserProvider with ChangeNotifier {
   int? get userId => _user?.id;
   bool _isTokenBeingHandled = false;
   static var client = http.Client();
+  String get userToken => _userToken ?? '';
 
   UserProvider() {
     _initialize();

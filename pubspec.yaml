@@ -79,6 +79,9 @@ dependencies:
 
   # Toast
   awesome_snackbar_content: ^0.1.5
+
+  # List Infinite Scrooling
+  infinite_scroll_pagination: ^5.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -11,8 +11,19 @@ extension NotificationTypeExtension on NotificationType {
         return 'appointment';
       case NotificationType.reportStatus:
         return 'report_status';
+    }
+  }
+
+  static NotificationType fromString(String value) {
+    switch (value.toLowerCase()) {
+      case 'chat':
+        return NotificationType.chat;
+      case 'appointment':
+        return NotificationType.appointment;
+      case 'report_status':
+        return NotificationType.reportStatus;
       default:
-        return 'unknown';
+        throw Exception('Unknown NotificationType: $value');
     }
   }
 }
