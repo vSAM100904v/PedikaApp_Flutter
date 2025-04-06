@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/atoms/placeholder_component.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/cards/report_card.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:pa2_kelompok07/model/report/report_request_model.dart';
@@ -166,101 +168,19 @@ class _ReportScreenState extends State<ReportScreen> {
           if (reportProvider.isLoading) {
             return buildReportSkeleton(context);
           } else if (reportProvider.reports == null) {
-            return const Center(child: Text('Gagal memuat laporan'));
+            return const PlaceHolderComponent(state: PlaceHolderState.error);
           } else if (reportProvider.reports!.data.isEmpty) {
-            return const Center(child: Text('Laporan Anda masih kosong'));
+            return const PlaceHolderComponent(
+              state: PlaceHolderState.emptyReport,
+            );
           } else {
             return ListView.builder(
               itemCount: reportProvider.reports!.data.length,
               itemBuilder: (context, index) {
                 ListLaporanModel report = reportProvider.reports!.data[index];
-                final timeAgo = timeago.format(report.createdAt, locale: 'id');
-                return GestureDetector(
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    margin: const EdgeInsets.all(10),
-                    width: MediaQuery.sizeOf(context).width,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: const BorderRadius.all(Radius.circular(10)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          spreadRadius: 5,
-                          blurRadius: 7,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(10),
-                                bottomLeft: Radius.circular(10),
-                              ),
-                              child: Image.network(
-                                report.violenceCategoryDetail.image!,
-                                width: 130,
-                                height: 130,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
-                                    Icons.error,
-                                    color: Colors.red,
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    report.violenceCategoryDetail.categoryName!,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontFamily: 'Poppins',
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    report.kronologisKasus,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontFamily: 'Poppins',
-                                    ),
-                                    maxLines: 2,
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    "Alamat : ${report.alamatTkp}",
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontFamily: 'Poppins',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          timeAgo,
-                          textAlign: TextAlign.end,
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ],
-                    ),
-                  ),
+
+                return ReportCard(
+                  report: report,
                   onTap: () {
                     Navigator.push(
                       context,

@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/atoms/placeholder_component.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/cards/appointment_card.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/dialogs/appointment_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:pa2_kelompok07/model/appointment_request_model.dart';
@@ -210,7 +213,7 @@ class _AppointmentPageState extends State<AppointmentPage> {
       return Scaffold(
         appBar: AppBar(
           title: Text(
-            "Permintaan Pertemuan",
+            "Permintaan Pertemuannnn",
             style: TextStyle(
               color: AppColor.descColor,
               fontSize: 17,
@@ -308,7 +311,7 @@ class _AppointmentPageState extends State<AppointmentPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Permintaan Pertemuan",
+          "Permintaan Pertemuannn",
           style: TextStyle(
             color: AppColor.descColor,
             fontSize: 17,
@@ -361,275 +364,48 @@ class _AppointmentPageState extends State<AppointmentPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return buildReportSkeleton(context);
           } else if (snapshot.hasError) {
-            return Center(child: Text("Gagal memuat data: ${snapshot.error}"));
+            return Center(
+              child: PlaceHolderComponent(
+                state: PlaceHolderState.error,
+                errorCause: snapshot.error.toString(),
+              ),
+            );
           } else if (snapshot.hasData) {
             return ListView.builder(
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
-                var appointment = snapshot.data![index];
-                String tanggal = DateFormat(
-                  'd MMMM yyyy',
-                  'id',
-                ).format(DateTime.parse(appointment.waktuDimulai));
-                String jamMulai = DateFormat(
-                  'EEEE, HH:mm',
-                  'id_ID',
-                ).format(DateTime.parse(appointment.waktuDimulai));
-                String jamSelesai = DateFormat(
-                  'HH:mm',
-                  'id_ID',
-                ).format(DateTime.parse(appointment.waktuSelesai));
-                return Container(
-                  padding: const EdgeInsets.all(10),
-                  margin: const EdgeInsets.all(10),
-                  width: MediaQuery.sizeOf(context).width,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black, width: 1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: Text(tanggal),
+                final appointment = snapshot.data![index];
+
+                return AppointmentCard(
+                  appointment: appointment,
+                  onViewPressed: () {
+                    showAppointmentDetailsDialog(context, appointment);
+                  },
+                  onEditPressed: () {
+                    Navigator.of(context).pushNamed('/edit-janji-temu');
+                  },
+                  onCancelPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => CancelAppointmentScreen(
+                              appointmentId: appointment.id,
+                              waktuDimulai: appointment.waktuDimulai,
+                              waktuSelesai: appointment.waktuSelesai,
+                              details: appointment.keperluanKonsultasi,
+                            ),
                       ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.location_on),
-                          const SizedBox(width: 5),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'DPMDPPPA Kabupaten Toba',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  'Jl. Siliwangi No.1, Kec. Balige, Toba, Sumatera Utara',
-                                  style: TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 11,
-                                  ),
-                                  softWrap: true,
-                                ),
-                              ],
-                            ),
-                          ),
-                          appointment.status == "Belum disetujui"
-                              ? TextButton(
-                                onPressed: null,
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Colors.blueAccent,
-                                  backgroundColor: Colors.transparent,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 10,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Belum Disetujui',
-                                  style: TextStyle(
-                                    color: Colors.blueAccent,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              )
-                              : appointment.status == "Disetujui"
-                              ? TextButton(
-                                onPressed: null,
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Colors.green,
-                                  backgroundColor: Colors.transparent,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 10,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Disetujui',
-                                  style: TextStyle(
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              )
-                              : appointment.status == "Ditolak"
-                              ? TextButton(
-                                onPressed: null,
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Colors.red,
-                                  backgroundColor: Colors.transparent,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 10,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Ditolak',
-                                  style: TextStyle(
-                                    color: Colors.red,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              )
-                              : appointment.status == "Dibatalkan"
-                              ? TextButton(
-                                onPressed: null,
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Colors.red,
-                                  backgroundColor: Colors.transparent,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 10,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Dibatalkan',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              )
-                              : Container(),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.access_time),
-                          const SizedBox(width: 5),
-                          Text(
-                            '${jamMulai} - ${jamSelesai} WIB',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black,
-                            ),
-                          ),
-                          Expanded(child: Container()),
-                          if (appointment.status == "Belum disetujui" ||
-                              appointment.status == "Disetujui" ||
-                              appointment.status == "Ditolak" ||
-                              appointment.status == "Dibatalkan")
-                            Ink(
-                              decoration: BoxDecoration(
-                                color: Colors.blue,
-                                borderRadius:
-                                    appointment.status == "Belum disetujui"
-                                        ? BorderRadius.only(
-                                          topLeft: Radius.circular(8),
-                                          bottomLeft: Radius.circular(8),
-                                        )
-                                        : BorderRadius.all(Radius.circular(8)),
-                              ),
-                              child: InkWell(
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(8),
-                                  bottomLeft: Radius.circular(8),
-                                ),
-                                onTap: () {
-                                  showAppointmentDetailsDialog(
-                                    context,
-                                    appointment,
-                                  );
-                                  print("View button pressed");
-                                },
-                                child: const Padding(
-                                  padding: EdgeInsets.all(5.0),
-                                  child: Icon(
-                                    Icons.remove_red_eye_rounded,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          if (appointment.status == "Belum disetujui")
-                            Ink(
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFF3C538),
-                              ),
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.of(
-                                    context,
-                                  ).pushNamed('/edit-janji-temu');
-                                },
-                                child: const Padding(
-                                  padding: EdgeInsets.all(5.0),
-                                  child: Icon(Icons.edit, color: Colors.white),
-                                ),
-                              ),
-                            ),
-                          if (appointment.status == "Belum disetujui")
-                            Ink(
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.only(
-                                  topRight: Radius.circular(8),
-                                  bottomRight: Radius.circular(8),
-                                ),
-                              ),
-                              child: InkWell(
-                                borderRadius: const BorderRadius.only(
-                                  topRight: Radius.circular(8),
-                                  bottomRight: Radius.circular(8),
-                                ),
-                                onTap: () {
-                                  var appointment = snapshot.data![index];
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) => CancelAppointmentScreen(
-                                            appointmentId: appointment.id,
-                                            waktuDimulai:
-                                                appointment.waktuDimulai,
-                                            waktuSelesai:
-                                                appointment.waktuSelesai,
-                                            details:
-                                                appointment.keperluanKonsultasi,
-                                          ),
-                                    ),
-                                  );
-                                },
-                                child: const Padding(
-                                  padding: EdgeInsets.all(5.0),
-                                  child: Icon(
-                                    Icons.delete,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 );
               },
             );
           } else {
             return const Center(
-              child: Text("Tidak ada data janji temu yang ditemukan"),
+              child: PlaceHolderComponent(
+                state: PlaceHolderState.noScheduledMeetings,
+              ),
             );
           }
         },
@@ -652,54 +428,6 @@ class _AppointmentPageState extends State<AppointmentPage> {
         },
         child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
-    );
-  }
-
-  void showAppointmentDetailsDialog(
-    BuildContext context,
-    AppointmentRequestModel appointment,
-  ) {
-    String formattedDate = DateFormat(
-      'EEEE, d MMMM yyyy',
-      'id_ID',
-    ).format(DateTime.parse(appointment.waktuDimulai));
-    String jamMulai = DateFormat(
-      'HH:mm',
-      'id_ID',
-    ).format(DateTime.parse(appointment.waktuDimulai));
-    String jamSelesai = DateFormat(
-      'HH:mm',
-      'id_ID',
-    ).format(DateTime.parse(appointment.waktuSelesai));
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          contentPadding: const EdgeInsets.all(20),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Align(
-                alignment: Alignment.topRight,
-                child: IconButton(
-                  icon: Icon(Icons.close, color: AppColor.primaryColor),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ),
-              Flexible(child: Text(appointment.keperluanKonsultasi)),
-              Text(
-                'Waktu: ${formattedDate} Pukul ${jamMulai} - ${jamSelesai} WIB',
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

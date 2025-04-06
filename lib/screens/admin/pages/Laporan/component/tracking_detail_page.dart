@@ -50,7 +50,7 @@ class _TrackingPageState extends State<TrackingPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Detail Laporan",
+          "Detail Laporannn",
           style: TextStyle(
             fontSize: 16,
             color: Colors.white,

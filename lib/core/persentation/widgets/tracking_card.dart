@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:pa2_kelompok07/core/constant/constant.dart';
 import 'package:pa2_kelompok07/core/helpers/hooks/responsive_sizes.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/custom_icon.dart';
 import 'package:pa2_kelompok07/model/report/tracking_report_model.dart';
 import 'package:pa2_kelompok07/styles/color.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -176,8 +177,9 @@ class TrackingCard extends StatelessWidget {
   Widget _buildDocumentsSection(BuildContext context) {
     final responsive = context.responsive;
     final theme = Theme.of(context);
-    final validDocuments =
-        tracking.documents.where((url) => _isValidUrl(url)).toList();
+    final validDocuments = tracking.documents;
+    // final validDocuments =
+    //     tracking.documents.where((url) => _isValidUrl(url)).toList();
 
     if (validDocuments.isEmpty) return const SizedBox();
 
@@ -323,10 +325,10 @@ class TrackingCard extends StatelessWidget {
           (context, url, error) => Container(
             color: Colors.grey[200],
             child: Center(
-              child: Icon(
-                Icons.broken_image,
-                size: context.responsive.fontSize(SizeScale.xxl),
-                color: Colors.grey[400],
+              child: CustomIconButton(
+                icon: Icons.broken_image,
+                iconSize: context.responsive.fontSize(SizeScale.xxl),
+                color: AppColors.error,
               ),
             ),
           ),

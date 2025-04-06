@@ -12,6 +12,7 @@ import 'package:pa2_kelompok07/core/helpers/logger/logger.dart';
 import 'package:pa2_kelompok07/core/models/notification_channel_model.dart';
 import 'package:pa2_kelompok07/main.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/Laporan/detail_report_screen.dart';
+import 'package:pa2_kelompok07/screens/appointment/appointment_screen.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -166,6 +167,8 @@ class NotificationService {
         return AppColors.tertiary;
       case NotificationType.reportStatus:
         return AppColors.primary;
+      case NotificationType.unknown:
+        return AppColors.error;
     }
   }
 
@@ -245,10 +248,14 @@ class NotificationService {
         // TODO: Navigasi ke layar chat
         break;
       case NotificationType.appointment:
+        _navigateToAppointment();
         _logger.log(
           'Opening appointment screen with ID: ${notification.data.appointmentId}',
         );
         // TODO: Navigasi ke layar appointment
+        break;
+      case NotificationType.unknown:
+        _logger.log('Unknown notification type: ${notification.data.type}');
         break;
     }
   }
@@ -263,6 +270,17 @@ class NotificationService {
           builder: (context) => DetailReportScreen(noRegistrasi: reportId),
         ),
       );
+    } else {
+      _logger.log('No context available for navigation');
+    }
+  }
+
+  void _navigateToAppointment() {
+    final context = navigatorKey.currentContext;
+    if (context != null) {
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (context) => AppointmentPage()));
     } else {
       _logger.log('No context available for navigation');
     }

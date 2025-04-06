@@ -10,6 +10,17 @@ class ResponsiveSizes {
   double get screenWidth => MediaQuery.of(context).size.width;
   double get screenHeight => MediaQuery.of(context).size.height;
 
+  /// Returns a space size based on the given [SizeScale].
+  ///
+  /// The space sizes are as follows:
+  ///
+  /// * [SizeScale.xs]: ~12
+  /// * [SizeScale.sm]: ~14
+  /// * [SizeScale.md]: ~16
+  /// * [SizeScale.lg]: ~18
+  /// * [SizeScale.xl]: ~20
+  /// * [SizeScale.xxl]: ~24
+  /// * [SizeScale.xxxl]: ~30
   double space(SizeScale size) {
     switch (size) {
       case SizeScale.xs:
@@ -29,6 +40,17 @@ class ResponsiveSizes {
     }
   }
 
+  /// Returns a font size based on the given [SizeScale].
+  ///
+  /// The font sizes are as follows:
+  ///
+  /// * [SizeScale.xs]: ~12
+  /// * [SizeScale.sm]: ~14
+  /// * [SizeScale.md]: ~16
+  /// * [SizeScale.lg]: ~18
+  /// * [SizeScale.xl]: ~20
+  /// * [SizeScale.xxl]: ~24
+  /// * [SizeScale.xxxl]: ~30
   double fontSize(SizeScale size) {
     switch (size) {
       case SizeScale.xs:
@@ -48,6 +70,14 @@ class ResponsiveSizes {
     }
   }
 
+  /// Returns a border radius size based on the given [SizeScale].
+  ///
+  /// The border radius sizes are as follows:
+  ///
+  /// * [SizeScale.xs]: ~10
+  /// * [SizeScale.sm]: ~20
+  /// * [SizeScale.md]: ~30
+  /// * Default: ~20
   double borderRadius(SizeScale size) {
     switch (size) {
       case SizeScale.xs:

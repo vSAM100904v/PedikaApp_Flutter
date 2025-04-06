@@ -60,15 +60,19 @@ class _HomePageState extends State<HomePage> with TextLogger {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.notifications_none,
-                    color: Colors.white,
-                    size: 30,
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pushNamed('/notifikasi');
-                  },
+                Consumer<UserProvider>(
+                  builder:
+                      (context, provider, _) => Badge(
+                        label: Text(provider.unreadCount.toString()),
+                        isLabelVisible: provider.unreadCount > 0,
+                        child: IconButton(
+                          icon: const Icon(Icons.notifications),
+                          onPressed:
+                              () => Navigator.of(
+                                context,
+                              ).pushNamed('/notifikasi'),
+                        ),
+                      ),
                 ),
               ],
             ),

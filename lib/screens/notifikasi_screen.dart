@@ -3,82 +3,21 @@ import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 import 'package:pa2_kelompok07/core/constant/seed.dart';
 import 'package:pa2_kelompok07/core/helpers/hooks/responsive_sizes.dart';
+import 'package:pa2_kelompok07/core/helpers/logger/text_logger.dart';
+import 'package:pa2_kelompok07/core/helpers/toasters/toast.dart';
 import 'package:pa2_kelompok07/core/models/notification_channel_model.dart';
 import 'package:pa2_kelompok07/core/models/notification_response_model.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/atoms/placeholder_component.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/modals/notification_detail_modal.dart';
 import 'package:pa2_kelompok07/core/persentation/widgets/notification_card.dart';
+import 'package:pa2_kelompok07/core/utils/notification_type_util.dart';
 import 'package:pa2_kelompok07/provider/notification_query_provider.dart';
+import 'package:pa2_kelompok07/provider/user_provider.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/Laporan/detail_report_screen.dart';
+import 'package:pa2_kelompok07/screens/admin/pages/beranda/admin_dashboard.dart';
+import 'package:pa2_kelompok07/services/api_service.dart';
 import 'package:provider/provider.dart';
 import '../styles/color.dart';
-
-// class NotificationScreen extends StatefulWidget {
-//   const NotificationScreen({super.key});
-
-//   @override
-//   State<NotificationScreen> createState() => _NotificationScreenState();
-// }
-
-// class _NotificationScreenState extends State<NotificationScreen> {
-//   void _handleNotificationTap(int index) {
-//     setState(() {
-//       MockUp.notifications[index]['isRead'] = true;
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text(
-//           "Notifikasi",
-//           style: TextStyle(
-//             fontSize: 16,
-//             color: Colors.white,
-//             fontWeight: FontWeight.w600,
-//           ),
-//         ),
-//         centerTitle: true,
-//         backgroundColor: Colors.purple,
-//         iconTheme: const IconThemeData(color: Colors.white),
-//         elevation: 0,
-//       ),
-//       body: Container(
-//         decoration: BoxDecoration(
-//           gradient: LinearGradient(
-//             begin: Alignment.topCenter,
-//             end: Alignment.bottomCenter,
-//             colors: [
-//               Colors.purple.withOpacity(0.05),
-//               Colors.purple.withOpacity(0.02),
-//               Colors.transparent,
-//             ],
-//             stops: const [0.0, 0.3, 1.0],
-//           ),
-//         ),
-//         child: ListView.separated(
-//           padding: EdgeInsets.all(context.responsive.space(SizeScale.md)),
-//           itemCount: MockUp.notifications.length,
-//           separatorBuilder:
-//               (context, index) =>
-//                   SizedBox(height: context.responsive.space(SizeScale.xs)),
-//           itemBuilder: (context, index) {
-//             final notification = MockUp.notifications[index];
-//             return NotificationCard(
-//               title: notification['title'],
-//               sender: notification['sender'],
-//               time: notification['time'],
-//               icon: notification['icon'],
-//               iconColor: notification['color'],
-//               isRead: notification['isRead'],
-//               onTap: () => _handleNotificationTap(index),
-//             );
-//           },
-//         ),
-//       ),
-//     );
-//   }
-
-// }
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -87,38 +26,56 @@ class NotificationScreen extends StatefulWidget {
   State<NotificationScreen> createState() => _NotificationScreenState();
 }
 
-class _NotificationScreenState extends State<NotificationScreen> {
+class _NotificationScreenState extends State<NotificationScreen>
+    with TextLogger {
+  static const _pageSize = 10;
+  late final String _accessToken;
+
   late final PagingController<int, NotificationPayload> _pagingController;
-  final int _pageSize = 10;
 
   @override
   void initState() {
     super.initState();
-    _pagingController = PagingController(firstPageKey: 1);
-    _pagingController.addPageRequestListener((pageKey) {
-      _fetchPage(pageKey);
-    });
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    _accessToken = userProvider.userToken; // Pastikan token tidak null
+    _pagingController = PagingController<int, NotificationPayload>(
+      getNextPageKey: (PagingState<int, NotificationPayload> state) {
+        debugLog("INI ADALAH ISI DARI PAGE KEY");
+
+        final keys = state.keys;
+        final pages = state.pages;
+
+        if (keys == null) return 1;
+
+        if (pages != null && pages.last.length < _pageSize) {
+          return null;
+        }
+
+        return keys.last + 1;
+      },
+      fetchPage: (pageKey) async {
+        try {
+          final result = await APIService().fetchNotifications(
+            _accessToken,
+            pageKey,
+            _pageSize,
+          );
+          final notifications =
+              result['notifications'] as List<NotificationPayload>;
+
+          return notifications;
+        } catch (e) {
+          debugLog('Error fetching page $pageKey: $e');
+          rethrow;
+        }
+      },
+    );
+    _pagingController.addListener(_showError);
   }
 
-  Future<void> _fetchPage(int pageKey) async {
-    try {
-      final provider = Provider.of<NotificationProvider>(
-        context,
-        listen: false,
-      );
-      await provider.fetchNotifications(page: pageKey);
-
-      final newItems = provider.notifications;
-      final isLastPage = newItems.length < _pageSize;
-
-      if (isLastPage) {
-        _pagingController.appendLastPage(newItems);
-      } else {
-        final nextPageKey = pageKey + 1;
-        _pagingController.appendPage(newItems, nextPageKey);
-      }
-    } catch (error) {
-      _pagingController.error = error;
+  Future<void> _showError() async {
+    if (_pagingController.value.status == PagingStatus.subsequentPageError) {
+      context.toast.showError("Gagal memuat notifikasi tambahan");
     }
   }
 
@@ -131,92 +88,95 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Notifikasi')),
-      body: RefreshIndicator(
-        onRefresh: () => Future.sync(() => _pagingController.refresh()),
-        child: PagedListView<int, NotificationPayload>.separated(
-          pagingController: _pagingController,
-          builderDelegate: PagedChildBuilderDelegate<NotificationPayload>(
-            itemBuilder:
-                (context, notification, index) => NotificationCard(
-                  title: notification.title,
-                  type: notification.type,
-                  time: notification.createdAt,
-                  isRead: notification.isRead,
-                  data: notification.data,
-                  onTap: () => _handleNotificationTap(notification),
-                ),
-            firstPageProgressIndicatorBuilder:
-                (_) => const Center(child: CircularProgressIndicator()),
-            newPageProgressIndicatorBuilder:
-                (_) => const Center(child: CircularProgressIndicator()),
-            firstPageErrorIndicatorBuilder:
-                (context) => ErrorRetry(
-                  error: _pagingController.error,
-                  onRetry: () => _pagingController.refresh(),
-                ),
-            noItemsFoundIndicatorBuilder:
-                (context) => const Center(child: Text('Tidak ada notifikasi')),
+      appBar: AppBar(
+        title: const Text('Notifikasi'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => _pagingController.refresh(),
           ),
-          separatorBuilder: (context, index) => const Divider(height: 1),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async => _pagingController.refresh(),
+        child: PagingListener(
+          controller: _pagingController,
+          builder:
+              (
+                context,
+                state,
+                fetchNextPage,
+              ) => PagedListView<int, NotificationPayload>.separated(
+                state: state,
+                fetchNextPage: fetchNextPage,
+                builderDelegate: PagedChildBuilderDelegate<NotificationPayload>(
+                  animateTransitions: true,
+                  itemBuilder:
+                      (context, notification, index) => NotificationCard(
+                        title: notification.title,
+                        type: notification.type,
+                        time: notification.createdAt,
+                        isRead: notification.isRead,
+                        onTap: () => _handleNotificationTap(notification),
+                      ),
+                  firstPageProgressIndicatorBuilder:
+                      (_) => const Center(child: CircularProgressIndicator()),
+                  newPageProgressIndicatorBuilder:
+                      (_) => const Center(child: CircularProgressIndicator()),
+                  firstPageErrorIndicatorBuilder:
+                      (context) => PlaceHolderComponent(
+                        state: PlaceHolderState.customError,
+                      ),
+                  newPageErrorIndicatorBuilder:
+                      (context) => PlaceHolderComponent(
+                        state: PlaceHolderState.customError,
+                      ),
+                  noItemsFoundIndicatorBuilder:
+                      (context) => PlaceHolderComponent(
+                        state: PlaceHolderState.noNotifications,
+                      ),
+                ),
+                separatorBuilder: (context, index) => const Divider(height: 1),
+              ),
         ),
       ),
     );
   }
 
-  void _handleNotificationTap(NotificationPayload notification) {
-    // Handle notification tap based on type
-    switch (notification.type) {
-      case NotificationType.chat:
-        // Navigator.push(
-        //   context,
-        //   MaterialPageRoute(
-        //     builder:
-        //         (_) => ChatDetailScreen(chatId: notification.data['chatId']),
-        //   ),
-        // );
-        break;
-      case NotificationType.appointment:
-        // Navigator.push(
-        //   context,
-        //   MaterialPageRoute(
-        //     builder:
-        //         (_) => AppointmentDetailScreen(
-        //           appointmentId: notification.data['appointmentId'],
-        //         ),
-        //   ),
-        // );
-        break;
-      case NotificationType.reportStatus:
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (_) => DetailReportScreen(
-                  noRegistrasi: notification.data['reportId'],
-                ),
-          ),
+  void _handleNotificationTap(NotificationPayload notification) async {
+    debugLog('Notification tapped: ${notification.data}');
+
+    await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (alertDialogContext) {
+        return NotificationDetail(
+          notification: notification,
+          onPressed: () {
+            switch (notification.type) {
+              case NotificationType.chat:
+                // Navigator.push(...);
+                break;
+              case NotificationType.appointment:
+                // Navigator.push(...);
+                break;
+              case NotificationType.reportStatus:
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (_) => DetailReportScreen(
+                          noRegistrasi: notification.data.reportId.toString(),
+                        ),
+                  ),
+                );
+                break;
+              default:
+                return null;
+            }
+          },
         );
-        break;
-    }
-  }
-}
-
-class ErrorRetry extends StatelessWidget {
-  final dynamic error;
-  final VoidCallback onRetry;
-
-  const ErrorRetry({super.key, required this.error, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text('Error: ${error.toString()}'),
-        const SizedBox(height: 16),
-        ElevatedButton(onPressed: onRetry, child: const Text('Coba Lagi')),
-      ],
+      },
     );
   }
 }

@@ -11,7 +11,6 @@ class NotificationCard extends StatelessWidget {
   final DateTime time;
   final bool isRead;
   final VoidCallback? onTap;
-  final Map<String, dynamic>? data;
 
   const NotificationCard({
     super.key,
@@ -20,7 +19,6 @@ class NotificationCard extends StatelessWidget {
     required this.time,
     required this.isRead,
     this.onTap,
-    this.data,
   });
 
   String _formatTime(DateTime time) {
@@ -128,21 +126,25 @@ class NotificationCard extends StatelessWidget {
                       Row(
                         children: [
                           Expanded(
-                            child: Text(
-                              title,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight:
-                                    isRead
-                                        ? FontWeight.normal
-                                        : FontWeight.bold,
-                                color:
-                                    isRead
-                                        ? theme.colorScheme.onSurface
-                                            .withOpacity(0.7)
-                                        : theme.colorScheme.onSurface,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                            // child: Text(
+                            //   title,
+                            //   style: theme.textTheme.bodyMedium?.copyWith(
+                            //     fontWeight:
+                            //         isRead
+                            //             ? FontWeight.normal
+                            //             : FontWeight.bold,
+                            //     color:
+                            //         isRead
+                            //             ? theme.colorScheme.onSurface
+                            //                 .withOpacity(0.7)
+                            //             : theme.colorScheme.onSurface,
+                            //   ),
+                            //   maxLines: 2,
+                            //   overflow: TextOverflow.ellipsis,
+                            // ),
+                            child: NotificationText(
+                              title: title,
+                              isRead: isRead,
                             ),
                           ),
                         ],
@@ -182,6 +184,37 @@ class NotificationCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class NotificationText extends StatelessWidget {
+  final String title;
+  final bool isRead;
+
+  const NotificationText({Key? key, required this.title, required this.isRead})
+    : super(key: key);
+
+  String _cleanBrokenCharacters(String input) {
+    final RegExp brokenCharsRegex = RegExp(r'[\uFFFD\u00F0\x00-\x1F]');
+    return input.replaceAll(brokenCharsRegex, '');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cleanedTitle = _cleanBrokenCharacters(title);
+    return Text(
+      cleanedTitle,
+      style: theme.textTheme.bodyMedium?.copyWith(
+        fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+        color:
+            isRead
+                ? theme.colorScheme.onSurface.withOpacity(0.7)
+                : theme.colorScheme.onSurface,
+      ),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }

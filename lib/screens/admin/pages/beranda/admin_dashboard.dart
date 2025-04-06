@@ -888,7 +888,10 @@ class __AdminDashboardSectionState extends State<_AdminDashboardSection> {
 
   // Contoh fungsi navigasi ke halaman detail laporan
   void _navigateToLaporanPage() {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const Laporan()));
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const LaporanScreen()),
+    );
   }
 
   @override

@@ -22,7 +22,9 @@ class UserProvider with ChangeNotifier {
   final Logger _logger = Logger('UserProvider');
   User? get user => _user;
   bool get isLoggedIn => _userToken != null;
+  int _unreadCount = 0;
 
+  int get unreadCount => _unreadCount;
   int? get userId => _user?.id;
   bool _isTokenBeingHandled = false;
   static var client = http.Client();
@@ -36,6 +38,7 @@ class UserProvider with ChangeNotifier {
     await loadUserToken();
     if (isLoggedIn) {
       await _checkAndUpdateTokenOnLogin();
+      await fetchUnreadCount();
     }
   }
 
@@ -188,5 +191,23 @@ class UserProvider with ChangeNotifier {
 
     await APIService().sendTokenToServer(newToken, _userToken!);
     notifyListeners();
+  }
+
+  Future<void> fetchUnreadCount() async {
+    try {
+      if (!isLoggedIn || userId == null || _isTokenBeingHandled) {
+        _logger.log(
+          _isTokenBeingHandled
+              ? "Notificaition count alread retrieved"
+              : "User not logged in, Handled notification to default '0'",
+        );
+        return;
+      }
+      _unreadCount = await APIService().fetchUnreadNotificationCount(
+        _userToken!,
+      );
+    } catch (e) {
+      _logger.log('Error fetching unread count: $e');
+    }
   }
 }

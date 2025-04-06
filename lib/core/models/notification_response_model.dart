@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:pa2_kelompok07/core/models/notification_channel_model.dart';
 
 class NotificationPayload {
@@ -8,7 +9,7 @@ class NotificationPayload {
   final NotificationType type;
   final String title;
   final String body;
-  final Map<String, dynamic> data;
+  final FCMNotificationData data;
   final bool isRead;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -32,19 +33,56 @@ class NotificationPayload {
       type: NotificationTypeExtension.fromString(json['type'] as String),
       title: json['title'] as String,
       body: json['body'] as String,
-      data: jsonDecode(json['data'] as String) as Map<String, dynamic>,
+      data: FCMNotificationData.fromJson(
+        jsonDecode(json['data'] as String) as Map<String, dynamic>,
+      ),
       isRead: json['is_read'] as bool,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
+
+  factory NotificationPayload.fromFCMData({
+    required int userId,
+    required String title,
+    required String body,
+    required FCMNotificationData data,
+    required DateTime now,
+  }) {
+    return NotificationPayload(
+      id: 0, // Will be set by database
+      userId: userId,
+      type: data.type,
+      title: title,
+      body: body,
+      data: data,
+      isRead: false,
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'type': type.value,
+      'title': title,
+      'body': body,
+      'data': jsonEncode(data.toJson()),
+      'is_read': isRead,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+
   NotificationPayload copyWith({
     int? id,
     int? userId,
     NotificationType? type,
     String? title,
     String? body,
-    Map<String, dynamic>? data,
+    FCMNotificationData? data,
     bool? isRead,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -61,6 +99,93 @@ class NotificationPayload {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  @override
+  String toString() {
+    return 'NotificationPayload(id: $id, userId: $userId, type: $type, title: $title, '
+        'body: $body, data: $data, isRead: $isRead, createdAt: $createdAt, '
+        'updatedAt: $updatedAt)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is NotificationPayload &&
+        other.id == id &&
+        other.userId == userId &&
+        other.type == type &&
+        other.title == title &&
+        other.body == body &&
+        mapEquals(other.data.toJson(), data.toJson()) &&
+        other.isRead == isRead &&
+        other.createdAt == createdAt &&
+        other.updatedAt == updatedAt;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+        userId.hashCode ^
+        type.hashCode ^
+        title.hashCode ^
+        body.hashCode ^
+        data.hashCode ^
+        isRead.hashCode ^
+        createdAt.hashCode ^
+        updatedAt.hashCode;
+  }
+}
+
+class FCMNotificationData {
+  final NotificationType type;
+  final String? reportId;
+  final String? status;
+  final int? updatedBy;
+  final String? updatedAt;
+  final String? notes;
+  final String? deepLink;
+  final String? imageUrl;
+
+  FCMNotificationData({
+    required this.type,
+    this.reportId,
+    this.status,
+    this.updatedBy,
+    this.updatedAt,
+    this.notes,
+    this.deepLink,
+    this.imageUrl,
+  });
+
+  factory FCMNotificationData.fromJson(Map<String, dynamic> json) {
+    return FCMNotificationData(
+      type: NotificationTypeExtension.fromString(json['type'] as String),
+      reportId: json['reportId'] as String?,
+      status: json['status'] as String?,
+      updatedBy: json['updatedBy'] as int?,
+      updatedAt: json['updatedAt'] as String?,
+      notes: json['notes'] as String?,
+      deepLink: json['deepLink'] as String?,
+      imageUrl: json['imageUrl'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'type': type.value,
+      'reportId': reportId,
+      'status': status,
+      'updatedBy': updatedBy,
+      'updatedAt': updatedAt,
+      'notes': notes,
+      'deepLink': deepLink,
+      'imageUrl': imageUrl,
+    };
+  }
+
+  @override
+  String toString() => jsonEncode(toJson());
 }
 
 class NotificationResponse {

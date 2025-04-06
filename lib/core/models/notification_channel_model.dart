@@ -1,6 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 
-enum NotificationType { chat, appointment, reportStatus }
+enum NotificationType { chat, appointment, reportStatus, unknown }
 
 extension NotificationTypeExtension on NotificationType {
   String get stringValue {
@@ -11,6 +11,21 @@ extension NotificationTypeExtension on NotificationType {
         return 'appointment';
       case NotificationType.reportStatus:
         return 'report_status';
+      default:
+        return 'unknown';
+    }
+  }
+
+  String get value {
+    switch (this) {
+      case NotificationType.reportStatus:
+        return 'report_status';
+      case NotificationType.chat:
+        return 'chat';
+      case NotificationType.appointment:
+        return 'appointment';
+      case NotificationType.unknown:
+        return 'unknown';
     }
   }
 

@@ -22,56 +22,6 @@ class NotificationProvider with ChangeNotifier {
 
   NotificationProvider({required this.userProvider});
 
-  Future<void> fetchNotifications({int page = 1, int limit = 10}) async {
-    if (_isLoading) return;
-
-    _isLoading = true;
-    _hasError = false;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final token = userProvider.userToken;
-      if (token == "") {
-        throw Exception('User not logged in');
-      }
-
-      final url = Uri.parse(
-        'http://your-api-url:8080/notifications?page=$page&limit=$limit',
-      );
-      final response = await http.get(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final newNotifications =
-            (data['notifications'] as List)
-                .map((json) => NotificationPayload.fromJson(json))
-                .toList();
-
-        if (page == 1) {
-          _notifications = newNotifications;
-        } else {
-          _notifications.addAll(newNotifications);
-        }
-      } else {
-        throw Exception('Failed to load notifications: ${response.statusCode}');
-      }
-    } catch (e) {
-      _hasError = true;
-      _errorMessage = e.toString();
-      _logger.log('Error fetching notifications: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
   Future<void> markAsRead(String notificationId) async {
     try {
       final token = userProvider.userToken;

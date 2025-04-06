@@ -17,11 +17,20 @@ class DetailResponseModel {
   });
 
   factory DetailResponseModel.fromJson(Map<String, dynamic> json) {
+    // Print JSON yang diterima untuk debugging
+    print('Received JSON: $json');
+
+    // Mengambil data dari JSON dan membuat objek ReportDetail
+    final reportDetail = ReportDetail.fromJson(json['Data'] ?? {});
+
+    // Print detail tracking setelah diubah menjadi objek
+    print('Tracking Detail: ${reportDetail.trackingLaporan}');
+
     return DetailResponseModel(
       code: json['code'] ?? 0,
       status: json['status'] ?? '',
       message: json['message'] ?? '',
-      data: ReportDetail.fromJson(json['Data'] ?? {}),
+      data: reportDetail,
     );
   }
 
@@ -171,5 +180,37 @@ class ReportDetail {
       'korban': korban,
       'user_melihat': userMelihat?.toJson(),
     };
+  }
+
+  @override
+  String toString() {
+    return '''
+ReportDetail(
+  noRegistrasi: $noRegistrasi,
+  user: ${user.toString()},
+  userId: $userId,
+  violenceCategory: ${violenceCategory.toString()},
+  kategoriKekerasanId: $kategoriKekerasanId,
+  tanggalPelaporan: $tanggalPelaporan,
+  tanggalKejadian: $tanggalKejadian,
+  kategoriLokasiKasus: $kategoriLokasiKasus,
+  alamatTkp: $alamatTkp,
+  alamatDetailTkp: $alamatDetailTkp,
+  kronologisKasus: $kronologisKasus,
+  status: $status,
+  alasanDibatalkan: $alasanDibatalkan,
+  waktuDilihat: $waktuDilihat,
+  useridMelihat: $useridMelihat,
+  waktuDiproses: $waktuDiproses,
+  waktuDibatalkan: $waktuDibatalkan,
+  dokumentasi: ${dokumentasi.toString()},
+  createdAt: $createdAt,
+  updatedAt: $updatedAt,
+  trackingLaporan: [${trackingLaporan.map((e) => e.toString()).join(', ')}],
+  pelaku: $pelaku,
+  korban: $korban,
+  userMelihat: ${userMelihat?.toString()}
+)
+''';
   }
 }

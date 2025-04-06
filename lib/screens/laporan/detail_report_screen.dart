@@ -1,30 +1,29 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
+import 'package:pa2_kelompok07/core/helpers/hooks/responsive_sizes.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/atoms/placeholder_component.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/custom_icon.dart';
+import 'package:pa2_kelompok07/provider/report_provider.dart';
 import 'package:pa2_kelompok07/screens/dpmdppa/report_cancel_screen.dart';
 import 'package:pa2_kelompok07/screens/laporan/component/tracking_detail_page.dart';
-import '../../model/report/full_report_model.dart';
-import '../../provider/report_provider.dart';
-import '../../styles/color.dart';
-import 'package:timeago/timeago.dart' as timeago;
+import 'package:pa2_kelompok07/styles/color.dart';
+import 'package:provider/provider.dart';
 
 class DetailReportScreen extends StatefulWidget {
   final String noRegistrasi;
 
-  DetailReportScreen({Key? key, required this.noRegistrasi}) : super(key: key);
+  const DetailReportScreen({super.key, required this.noRegistrasi});
 
   @override
-  _DetailReportScreenState createState() => _DetailReportScreenState();
+  State<DetailReportScreen> createState() => _DetailReportScreenState();
 }
 
 class _DetailReportScreenState extends State<DetailReportScreen> {
-  Future<DetailResponseModel>? reportDetailFuture;
-
   @override
   void initState() {
     super.initState();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ReportProvider>(
         context,
         listen: false,
@@ -32,16 +31,134 @@ class _DetailReportScreenState extends State<DetailReportScreen> {
     });
   }
 
+  String _formatDateTime(DateTime date) {
+    return DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(date);
+  }
+
+  String _getStatusLabel(String status) {
+    switch (status.toLowerCase()) {
+      case 'laporan masuk':
+        return 'Laporan Masuk';
+      case 'diproses':
+        return 'Sedang Diproses';
+      case 'dibatalkan':
+        return 'Dibatalkan';
+      case 'selesai':
+        return 'Selesai';
+      default:
+        return status;
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'laporan masuk':
+        return Colors.blue;
+      case 'diproses':
+        return Colors.orange;
+      case 'dibatalkan':
+        return Colors.red;
+      case 'selesai':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Widget _buildDetailCard({
+    required BuildContext context,
+    required String title,
+    required String value,
+    IconData? icon,
+  }) {
+    final responsive = context.responsive;
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: EdgeInsets.only(bottom: responsive.space(SizeScale.sm)),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(
+          responsive.borderRadius(SizeScale.xs),
+        ),
+        side: BorderSide(color: theme.dividerColor.withOpacity(0.2), width: 1),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(responsive.space(SizeScale.md)),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (icon != null)
+              Padding(
+                padding: EdgeInsets.only(right: responsive.space(SizeScale.sm)),
+                child: Icon(
+                  icon,
+                  size: responsive.space(SizeScale.lg),
+                  color: theme.primaryColor,
+                ),
+              ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: responsive.fontSize(SizeScale.sm),
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                  SizedBox(height: responsive.space(SizeScale.xs)),
+                  Text(
+                    value,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontSize: responsive.fontSize(SizeScale.md),
+                      color: theme.colorScheme.onSurface.withOpacity(0.9),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: _getStatusColor(status).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: _getStatusColor(status).withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        _getStatusLabel(status),
+        style: TextStyle(
+          color: _getStatusColor(status),
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final responsive = context.responsive;
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Detail Laporan",
+        title: Text(
+          "Detail Laporanmm",
           style: TextStyle(
-            fontSize: 16,
-            color: Colors.white,
+            fontSize: responsive.fontSize(SizeScale.lg),
             fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
         backgroundColor: AppColor.primaryColor,
@@ -50,172 +167,301 @@ class _DetailReportScreenState extends State<DetailReportScreen> {
       body: Consumer<ReportProvider>(
         builder: (context, reportProvider, child) {
           if (reportProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (reportProvider.errorMessage != null) {
-            return Center(child: Text('Error: ${reportProvider.errorMessage}'));
-          } else if (reportProvider.detailReport != null) {
-            final detail = reportProvider.detailReport!.data;
-            final jam = DateFormat(
-              'd MMMM yyyy',
-              'id',
-            ).format(detail.createdAt);
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  GestureDetector(
-                    onTap: () {
+            return Center(
+              child: CircularProgressIndicator(color: AppColor.primaryColor),
+            );
+          }
+
+          if (reportProvider.detailReport?.code != 200) {
+            return Center(
+              child: PlaceHolderComponent(
+                state: PlaceHolderState.customError,
+                errorCause: 'Error: ${reportProvider.errorMessage}',
+              ),
+            );
+          }
+
+          if (reportProvider.detailReport == null) {
+            return Center(
+              child: PlaceHolderComponent(
+                state: PlaceHolderState.noNotifications,
+              ),
+            );
+          }
+
+          final detail = reportProvider.detailReport!.data;
+          final formattedDate = _formatDateTime(detail.createdAt);
+
+          return SingleChildScrollView(
+            padding: EdgeInsets.all(responsive.space(SizeScale.md)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header dengan nomor registrasi dan status
+                Card(
+                  elevation: 0,
+                  color: theme.colorScheme.surfaceVariant.withOpacity(0.2),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      responsive.borderRadius(SizeScale.sm),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(responsive.space(SizeScale.md)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "No. Registrasi",
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface.withOpacity(
+                                  0.6,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              detail.noRegistrasi,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(height: responsive.space(SizeScale.sm)),
+                        Divider(
+                          height: 1,
+                          color: theme.dividerColor.withOpacity(0.2),
+                        ),
+                        SizedBox(height: responsive.space(SizeScale.sm)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Tracking Laporan",
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface.withOpacity(
+                                  0.6,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => TrackingPage(
+                                          noRegistrasi: detail.noRegistrasi,
+                                        ),
+                                  ),
+                                );
+                              },
+                              child: CustomIconButton(
+                                icon: Icons.chevron_right,
+                                color: Colors.black,
+                                iconSize: responsive.space(SizeScale.lg),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(height: responsive.space(SizeScale.sm)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Status Laporan",
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface.withOpacity(
+                                  0.6,
+                                ),
+                              ),
+                            ),
+                            _buildStatusBadge(detail.status),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: responsive.space(SizeScale.lg)),
+
+                // Gambar kategori kekerasan
+                if (detail.violenceCategory.image != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(
+                      responsive.borderRadius(SizeScale.sm),
+                    ),
+                    child: CachedNetworkImage(
+                      imageUrl: detail.violenceCategory.image!,
+                      width: double.infinity,
+                      height: responsive.heightPercent(25),
+                      fit: BoxFit.cover,
+                      placeholder:
+                          (context, url) => Container(color: Colors.grey[200]),
+                      errorWidget:
+                          (context, url, error) => Container(
+                            color: Colors.grey[200],
+                            child: CustomIconButton(
+                              icon: Icons.broken_image,
+                              iconSize: responsive.space(SizeScale.xxl),
+                              color: AppColor.descColor,
+                            ),
+                          ),
+                    ),
+                  ),
+
+                SizedBox(height: responsive.space(SizeScale.lg)),
+
+                // Informasi dasar laporan
+                Text(
+                  "Informasi Laporan",
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: responsive.space(SizeScale.sm)),
+
+                _buildDetailCard(
+                  context: context,
+                  title: "Tanggal Pelaporan",
+                  value: formattedDate,
+                  icon: Icons.calendar_today,
+                ),
+
+                _buildDetailCard(
+                  context: context,
+                  title: "Tanggal Kejadian",
+                  value: _formatDateTime(detail.tanggalKejadian),
+                  icon: Icons.event,
+                ),
+
+                _buildDetailCard(
+                  context: context,
+                  title: "Kategori Kekerasan",
+                  value:
+                      detail.violenceCategory.categoryName ?? "unkonw category",
+                  icon: Icons.category,
+                ),
+
+                _buildDetailCard(
+                  context: context,
+                  title: "Lokasi Kejadian",
+                  value: detail.kategoriLokasiKasus,
+                  icon: Icons.location_on,
+                ),
+
+                _buildDetailCard(
+                  context: context,
+                  title: "Alamat TKP",
+                  value: detail.alamatTkp,
+                  icon: Icons.place,
+                ),
+
+                if (detail.alamatDetailTkp.isNotEmpty)
+                  _buildDetailCard(
+                    context: context,
+                    title: "Detail Alamat TKP",
+                    value: detail.alamatDetailTkp,
+                    icon: Icons.description,
+                  ),
+
+                SizedBox(height: responsive.space(SizeScale.lg)),
+
+                // Informasi pelapor
+                Text(
+                  "Informasi Pelapor",
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: responsive.space(SizeScale.sm)),
+
+                _buildDetailCard(
+                  context: context,
+                  title: "Nama Lengkap",
+                  value: detail.user.full_name,
+                  icon: Icons.person,
+                ),
+
+                SizedBox(height: responsive.space(SizeScale.lg)),
+
+                // Kronologis kasus
+                Text(
+                  "Kronologis Kasus",
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: responsive.space(SizeScale.sm)),
+
+                Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      responsive.borderRadius(SizeScale.xs),
+                    ),
+                    side: BorderSide(
+                      color: theme.dividerColor.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(responsive.space(SizeScale.md)),
+                    child: Text(
+                      detail.kronologisKasus.isNotEmpty
+                          ? detail.kronologisKasus
+                          : "Tidak ada kronologis yang diberikan",
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: responsive.space(SizeScale.lg)),
+
+                // Tombol aksi
+                if (detail.status.toLowerCase() == 'laporan masuk')
+                  ElevatedButton(
+                    onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) => TrackingPage(
+                              (context) => ReportCancelScreen(
                                 noRegistrasi: widget.noRegistrasi,
                               ),
                         ),
                       );
                     },
-                    child: ListTile(
-                      leading: Icon(
-                        Icons.local_shipping,
-                        color: Colors.grey[600],
-                        size: 36,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[50],
+                      foregroundColor: Colors.red,
+                      minimumSize: Size(
+                        double.infinity,
+                        responsive.space(SizeScale.xxxl),
                       ),
-                      title: Text(
-                        "Status: ${detail.status}",
-                        style: const TextStyle(fontSize: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          responsive.borderRadius(SizeScale.sm),
+                        ),
+                        side: BorderSide(color: Colors.red.withOpacity(0.3)),
                       ),
-                      subtitle: const Text("Tekan untuk melihat"),
-                      trailing: const Icon(Icons.chevron_right),
+                    ),
+                    child: Text(
+                      'Batalkan Laporan',
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
-                  if (detail.violenceCategory.image != null)
-                    Image.network(
-                      detail.violenceCategory.image!,
-                      width: MediaQuery.of(context).size.width,
-                      height: 200,
-                      fit: BoxFit.cover,
-                      errorBuilder:
-                          (context, error, stackTrace) =>
-                              const Icon(Icons.error, color: Colors.red),
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.access_time),
-                                SizedBox(width: 5),
-                                Text(
-                                  jam,
-                                  textAlign: TextAlign.end,
-                                  style: TextStyle(color: Colors.grey[600]),
-                                ),
-                              ],
-                            ),
-                            Expanded(child: Container()),
-                            Text(detail.noRegistrasi),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          "Kategori Kasus : ${detail.violenceCategory?.categoryName}",
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          "Detail Laporan",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          "Nama Lengkap: ",
-                          style: TextStyle(fontWeight: FontWeight.w500),
-                        ),
-                        Text(detail.user.full_name ?? 'Unknown'),
-                        const SizedBox(height: 10),
-                        const Text(
-                          "Alamat: ",
-                          style: TextStyle(fontWeight: FontWeight.w500),
-                        ),
-                        Text(detail.alamatTkp ?? 'Unknown'),
-                        const SizedBox(height: 10),
-                        const Text(
-                          "Kronologis: ",
-                          style: TextStyle(fontWeight: FontWeight.w500),
-                        ),
-                        Text(detail.kronologisKasus ?? 'No details provided.'),
-                        Text(
-                          "Kategori Kekerasan: ${detail.violenceCategory?.categoryName ?? 'Unknown'}",
-                        ),
-                        const SizedBox(height: 20),
-                        if (detail.status == "Laporan masuk")
-                          ClipRRect(
-                            borderRadius: const BorderRadius.all(
-                              Radius.circular(5),
-                            ),
-                            child: SizedBox(
-                              width: MediaQuery.sizeOf(context).width,
-                              height: 56,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) => ReportCancelScreen(
-                                            noRegistrasi: widget.noRegistrasi,
-                                          ),
-                                    ),
-                                  );
-                                },
-                                style: ButtonStyle(
-                                  foregroundColor:
-                                      MaterialStateProperty.all<Color>(
-                                        Colors.white,
-                                      ),
-                                  backgroundColor:
-                                      MaterialStateProperty.all<Color>(
-                                        AppColor.primaryColor,
-                                      ),
-                                  shape: MaterialStateProperty.all<
-                                    RoundedRectangleBorder
-                                  >(
-                                    RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      side: BorderSide(
-                                        color: AppColor.primaryColor,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Batalkan Laporan',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 15,
-                                    fontFamily: 'Poppins',
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          } else {
-            return const Center(child: Text('Tidak ada data yang tersedia'));
-          }
+
+                SizedBox(height: responsive.space(SizeScale.lg)),
+              ],
+            ),
+          );
         },
       ),
     );

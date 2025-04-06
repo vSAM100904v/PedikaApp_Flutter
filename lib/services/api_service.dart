@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:pa2_kelompok07/config.dart';
 import 'package:pa2_kelompok07/core/helpers/logger/logger.dart';
+import 'package:pa2_kelompok07/core/models/notification_response_model.dart';
 import 'package:pa2_kelompok07/model/appointment_request_model.dart';
 import 'package:pa2_kelompok07/model/appointment_response_model.dart';
 import 'package:pa2_kelompok07/model/auth/login_response_model.dart';
@@ -441,6 +442,9 @@ class APIService {
     );
 
     if (response.statusCode == 200) {
+      _logger.log(
+        'jsonDecode(response.body.toString()): ${jsonDecode(response.body.toString())}',
+      );
       return DetailResponseModel.fromJson(jsonDecode(response.body));
     } else {
       throw Exception('Failed to load report details');
@@ -770,6 +774,85 @@ class APIService {
       }
     } catch (e) {
       _logger.log('Error sending FCM token to server: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchNotifications(
+    String token,
+    int pageKey,
+    int limit,
+  ) async {
+    _logger.log(
+      'Fetching notifications for page $pageKey with limit $limit amd token $token',
+    );
+    final url = Uri.parse(
+      '${Config.apiUrl}${Config.retrieveUserNotification}?page=$pageKey&limit=$limit',
+    );
+    final response = await client.get(
+      url,
+      headers: {
+        HttpHeaders.contentTypeHeader: 'application/json',
+        HttpHeaders.authorizationHeader: 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      _logger.log('Response Succes for fetch Notifications');
+      final jsonData = jsonDecode(response.body);
+      _logger.log('jsonData: $jsonData', level: LogLevel.success);
+      final data = jsonData['Data'] as Map<String, dynamic>;
+      final notifications =
+          (data['notifications'] as List)
+              .map(
+                (json) =>
+                    NotificationPayload.fromJson(json as Map<String, dynamic>),
+              )
+              .toList();
+      final pagination = data['pagination'] as Map<String, dynamic>;
+
+      final payload = {
+        'notifications': notifications,
+        'page': pagination['page'] as int,
+        'totalPages': pagination['total_pages'] as int,
+        'limit': pagination['limit'] as int,
+      };
+      _logger.log('Payload: $payload', level: LogLevel.success);
+      return payload;
+    } else {
+      _logger.log('Failed to load notifications: ${response.statusCode}');
+      throw Exception('Failed to load notifications: ${response.statusCode}');
+    }
+  }
+
+  Future<int> fetchUnreadNotificationCount(String accessToken) async {
+    try {
+      final url = "${Config.apiUrl}${Config.retrieveUnreadNotificationCount}";
+      final response = await client.get(
+        Uri.parse(url),
+        headers: {
+          HttpHeaders.contentTypeHeader: 'application/json',
+          HttpHeaders.authorizationHeader: 'Bearer $accessToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        // Memeriksa apakah 'Data' ada dan 'unread_count' dapat diakses
+        if (data['Data'] != null && data['Data']['unread_count'] != null) {
+          // Mengonversi unread_count ke integer
+          int unreadCount =
+              int.tryParse(data['Data']['unread_count'].toString()) ?? 0;
+          return unreadCount;
+        } else {
+          throw Exception('Invalid response format: ${response.body}');
+        }
+      } else {
+        throw Exception('Failed to load notifications: ${response.statusCode}');
+      }
+    } catch (e) {
+      _logger.log('Error fetching unread count: $e');
+      throw Exception('Failed to load notifications: ${e.toString()}');
     }
   }
 }
