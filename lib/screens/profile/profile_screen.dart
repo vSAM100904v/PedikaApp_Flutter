@@ -1,5 +1,8 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pa2_kelompok07/config.dart';
+import 'package:pa2_kelompok07/core/helpers/hooks/responsive_sizes.dart';
 import 'package:provider/provider.dart';
 import 'package:pa2_kelompok07/maintanance.dart';
 import 'package:pa2_kelompok07/screens/auth/login_screen.dart';
@@ -21,7 +24,6 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final ShowDialogMaintanance _showDialogMaintanance = ShowDialogMaintanance();
-  final APIService _apiService = APIService();
 
   @override
   void initState() {

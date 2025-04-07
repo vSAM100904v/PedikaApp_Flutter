@@ -210,4 +210,22 @@ class UserProvider with ChangeNotifier {
       _logger.log('Error fetching unread count: $e');
     }
   }
+
+  Future<void> markNotificationAsRead(int notificationId) async {
+    try {
+      if (!isLoggedIn || userId == null || _isTokenBeingHandled) {
+        _logger.log(
+          _isTokenBeingHandled
+              ? "Token already being handled"
+              : "User not logged in, token stored locally only $isLoggedIn $userId",
+        );
+        return;
+      }
+      await APIService().markNotificationAsRead(_userToken!, notificationId);
+      _unreadCount = _unreadCount - 1;
+      notifyListeners();
+    } catch (e) {
+      _logger.log('Error fetching Mark Notification as Read: $e');
+    }
+  }
 }

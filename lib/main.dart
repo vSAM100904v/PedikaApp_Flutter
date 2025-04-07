@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:pa2_kelompok07/core/services/notification_service.dart';
+import 'package:pa2_kelompok07/provider/notification_query_provider.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/Laporan/detail_report_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:pa2_kelompok07/navigationBar/bottom_bar.dart';
@@ -58,6 +59,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProvider(create: (_) => ReportProvider()),
         ChangeNotifierProvider(create: (_) => AppointmentProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationQueryProvider()),
         // Provider baru untuk admin
         ChangeNotifierProvider(create: (_) => adminProvider),
         Provider(create: (_) => NotificationService.instance),

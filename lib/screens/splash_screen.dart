@@ -23,6 +23,9 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     Future.delayed(const Duration(seconds: 3), () async {
       bool onBoardingViewed = await _checkIfOnBoardingViewed();
+
+      if (!mounted) return;
+
       if (onBoardingViewed) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const BottomNavigationWidget()),

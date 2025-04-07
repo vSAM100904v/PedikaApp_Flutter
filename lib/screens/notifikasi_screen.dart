@@ -10,14 +10,12 @@ import 'package:pa2_kelompok07/core/models/notification_response_model.dart';
 import 'package:pa2_kelompok07/core/persentation/widgets/atoms/placeholder_component.dart';
 import 'package:pa2_kelompok07/core/persentation/widgets/modals/notification_detail_modal.dart';
 import 'package:pa2_kelompok07/core/persentation/widgets/notification_card.dart';
-import 'package:pa2_kelompok07/core/utils/notification_type_util.dart';
 import 'package:pa2_kelompok07/provider/notification_query_provider.dart';
 import 'package:pa2_kelompok07/provider/user_provider.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/Laporan/detail_report_screen.dart';
-import 'package:pa2_kelompok07/screens/admin/pages/beranda/admin_dashboard.dart';
 import 'package:pa2_kelompok07/services/api_service.dart';
+import 'package:pa2_kelompok07/styles/color.dart';
 import 'package:provider/provider.dart';
-import '../styles/color.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -30,38 +28,49 @@ class _NotificationScreenState extends State<NotificationScreen>
     with TextLogger {
   static const _pageSize = 10;
   late final String _accessToken;
-
+  late final Future<void> Function(int) _onNotificationRead;
   late final PagingController<int, NotificationPayload> _pagingController;
+  late final NotificationQueryProvider _notificationProvider;
 
   @override
   void initState() {
     super.initState();
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    _accessToken = userProvider.userToken; // Pastikan token tidak null
+    _notificationProvider = Provider.of<NotificationQueryProvider>(
+      context,
+      listen: false,
+    );
+    _accessToken = userProvider.userToken;
+    _onNotificationRead = userProvider.markNotificationAsRead;
     _pagingController = PagingController<int, NotificationPayload>(
-      getNextPageKey: (PagingState<int, NotificationPayload> state) {
-        debugLog("INI ADALAH ISI DARI PAGE KEY");
-
+      getNextPageKey: (state) {
         final keys = state.keys;
         final pages = state.pages;
-
         if (keys == null) return 1;
-
         if (pages != null && pages.last.length < _pageSize) {
           return null;
         }
-
         return keys.last + 1;
       },
       fetchPage: (pageKey) async {
+        if (pageKey == 1 && _notificationProvider.cachedNotifications != null) {
+          debugLog("Menggunakan cache notifikasi");
+          return _notificationProvider.cachedNotifications!;
+        }
+
         try {
           final result = await APIService().fetchNotifications(
             _accessToken,
             pageKey,
             _pageSize,
           );
+
           final notifications =
               result['notifications'] as List<NotificationPayload>;
+
+          if (pageKey == 1) {
+            _notificationProvider.setCachedNotifications(notifications);
+          }
 
           return notifications;
         } catch (e) {
@@ -70,6 +79,7 @@ class _NotificationScreenState extends State<NotificationScreen>
         }
       },
     );
+
     _pagingController.addListener(_showError);
   }
 
@@ -77,6 +87,11 @@ class _NotificationScreenState extends State<NotificationScreen>
     if (_pagingController.value.status == PagingStatus.subsequentPageError) {
       context.toast.showError("Gagal memuat notifikasi tambahan");
     }
+  }
+
+  Future<void> _refreshNotifications() async {
+    _notificationProvider.clearCache();
+    _pagingController.refresh();
   }
 
   @override
@@ -89,16 +104,19 @@ class _NotificationScreenState extends State<NotificationScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifikasi'),
+        title: const Text('Notifikasi', style: TextStyle(color: Colors.white)),
+        backgroundColor: AppColor.primaryColor,
+        iconTheme: IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => _pagingController.refresh(),
+            onPressed: () => _refreshNotifications(),
+            color: Colors.white,
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async => _pagingController.refresh(),
+        onRefresh: () async => _refreshNotifications(),
         child: PagingListener(
           controller: _pagingController,
           builder:
@@ -116,7 +134,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                         title: notification.title,
                         type: notification.type,
                         time: notification.createdAt,
-                        isRead: notification.isRead,
+                        isRead: false,
                         onTap: () => _handleNotificationTap(notification),
                       ),
                   firstPageProgressIndicatorBuilder:
@@ -145,6 +163,12 @@ class _NotificationScreenState extends State<NotificationScreen>
 
   void _handleNotificationTap(NotificationPayload notification) async {
     debugLog('Notification tapped: ${notification.data}');
+
+    if (!notification.isRead) {
+      final updatedNotification = notification.copyWith(isRead: true);
+      await markNotificationAsRead(notification.id);
+    }
+    ;
 
     await showDialog<bool>(
       context: context,
@@ -179,4 +203,7 @@ class _NotificationScreenState extends State<NotificationScreen>
       },
     );
   }
+
+  Future<void> markNotificationAsRead(int notificationId) async =>
+      await _onNotificationRead(notificationId);
 }

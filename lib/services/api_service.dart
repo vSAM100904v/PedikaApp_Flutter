@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'dart:io' as io;
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:pa2_kelompok07/config.dart';
 import 'package:pa2_kelompok07/core/helpers/logger/logger.dart';
+import 'package:pa2_kelompok07/core/helpers/toasters/toast.dart';
 import 'package:pa2_kelompok07/core/models/notification_response_model.dart';
+import 'package:pa2_kelompok07/main.dart';
 import 'package:pa2_kelompok07/model/appointment_request_model.dart';
 import 'package:pa2_kelompok07/model/appointment_response_model.dart';
 import 'package:pa2_kelompok07/model/auth/login_response_model.dart';
@@ -13,7 +16,9 @@ import 'package:pa2_kelompok07/model/auth/register_response_model.dart';
 import 'package:pa2_kelompok07/model/report/list_report_model.dart';
 import 'package:pa2_kelompok07/model/report/report_request_model.dart';
 import 'package:pa2_kelompok07/model/report/report_response_model.dart';
+import 'package:pa2_kelompok07/provider/user_provider.dart';
 import 'package:pa2_kelompok07/services/shared_service.dart';
+import 'package:provider/provider.dart';
 
 import '../model/auth/login_request_model.dart';
 import '../model/content_model.dart';
@@ -770,7 +775,8 @@ class APIService {
       if (response.statusCode == 200) {
         _logger.log('FCM token successfully sent to server');
       } else {
-        _logger.log('Failed to send FCM token: ${response.body}');
+        forceLogoutAndRedirect();
+        throw Exception('Failed to send FCM token: ${response.statusCode}');
       }
     } catch (e) {
       _logger.log('Error sending FCM token to server: $e');
@@ -853,6 +859,49 @@ class APIService {
     } catch (e) {
       _logger.log('Error fetching unread count: $e');
       throw Exception('Failed to load notifications: ${e.toString()}');
+    }
+  }
+
+  Future<void> markNotificationAsRead(
+    String accessToken,
+    int notificationId,
+  ) async {
+    try {
+      final url =
+          "${Config.apiUrl}${Config.markNotificationAsRead}?notification_id=$notificationId";
+      final response = await client.get(
+        Uri.parse(url),
+        headers: {
+          HttpHeaders.contentTypeHeader: 'application/json',
+          HttpHeaders.authorizationHeader: 'Bearer $accessToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        _logger.log(
+          "Succes mark $notificationId as read and message from response ${data['message']}",
+        );
+      } else {
+        throw Exception(
+          'Failed to load notifications: ${response.body} $notificationId',
+        );
+      }
+    } catch (e) {
+      _logger.log('Error fetching unread count: $e');
+      throw Exception('Failed to load notifications: ${e.toString()}');
+    }
+  }
+
+  Future<void> forceLogoutAndRedirect() async {
+    final ctx = navigatorKey.currentContext;
+    if (ctx != null) {
+      ctx.toast.showWarning(
+        'Wah session kamu telah Expired nih, silahkan login kembali ya',
+      );
+      Navigator.of(ctx).pushNamedAndRemoveUntil('/login', (route) => false);
+      await Provider.of<UserProvider>(ctx, listen: false).logout();
     }
   }
 }

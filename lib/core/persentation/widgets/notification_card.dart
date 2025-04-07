@@ -5,12 +5,12 @@ import 'package:pa2_kelompok07/core/helpers/hooks/responsive_sizes.dart';
 import 'package:pa2_kelompok07/core/models/notification_channel_model.dart';
 import 'package:pa2_kelompok07/core/utils/notification_type_util.dart';
 
-class NotificationCard extends StatelessWidget {
+class NotificationCard extends StatefulWidget {
   final String title;
   final NotificationType type;
   final DateTime time;
   final bool isRead;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
   const NotificationCard({
     super.key,
@@ -18,8 +18,71 @@ class NotificationCard extends StatelessWidget {
     required this.type,
     required this.time,
     required this.isRead,
-    this.onTap,
+    required this.onTap,
   });
+
+  @override
+  State<NotificationCard> createState() => _NotificationCardState();
+}
+
+class _NotificationCardState extends State<NotificationCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<Color?> _backgroundColorAnimation;
+  // late Animation<double> _opacityAnimation;
+  late bool _isNotificationRead;
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 0.95,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+
+    // _opacityAnimation = Tween<double>(
+    //   begin: 0.6,
+    //   end: 1.0,
+    // ).animate(_controller);
+
+    _controller.forward();
+    _isNotificationRead = widget.isRead;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Inisialisasi _backgroundColorAnimation dengan context yang aman di sini
+    _backgroundColorAnimation = ColorTween(
+      begin: Colors.transparent,
+      end:
+          widget.isRead
+              ? Color(0xFFFFF7F7)
+              : Color(0xFFFFF7F7).withOpacity(0.05),
+    ).animate(_controller);
+  }
+
+  @override
+  void didUpdateWidget(covariant NotificationCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isRead != widget.isRead) {
+      _controller.reset();
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   String _formatTime(DateTime time) {
     final now = DateTime.now();
@@ -38,143 +101,174 @@ class NotificationCard extends StatelessWidget {
     }
   }
 
+  void markAsRead() {
+    print('Mark as read di triggered');
+    if (!_isNotificationRead) {
+      setState(() {
+        _isNotificationRead = true;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final responsive = context.responsive;
     final theme = Theme.of(context);
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      margin: EdgeInsets.symmetric(vertical: responsive.space(SizeScale.xs)),
-      decoration: BoxDecoration(
-        color:
-            isRead
-                ? theme.colorScheme.surface
-                : theme.colorScheme.surface.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(
-          responsive.borderRadius(SizeScale.sm),
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.scale(scale: _scaleAnimation.value, child: child);
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(
+          vertical: responsive.space(SizeScale.xs),
+          horizontal: responsive.space(SizeScale.sm),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
+        decoration: BoxDecoration(
+          color: _backgroundColorAnimation.value,
           borderRadius: BorderRadius.circular(
-            responsive.borderRadius(SizeScale.sm),
+            responsive.borderRadius(SizeScale.md),
           ),
-          child: Padding(
-            padding: EdgeInsets.all(responsive.space(SizeScale.md)),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(_isNotificationRead ? 0.05 : 0.1),
+              blurRadius: .5,
+              // offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () async {
+              markAsRead();
+              widget.onTap();
+            },
+            borderRadius: BorderRadius.circular(
+              responsive.borderRadius(SizeScale.md),
+            ),
+            splashColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            highlightColor: Colors.transparent,
+            child: Stack(
               children: [
-                Stack(
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.elasticOut,
-                      transform:
-                          Matrix4.identity()
-                            ..scale(isRead ? 0.9 : 1.0, isRead ? 0.9 : 1.0),
-                      child: CircleAvatar(
-                        backgroundColor: NotificationTypeUtils.getColor(
-                          type,
-                        ).withOpacity(isRead ? 0.7 : 1.0),
-                        radius: responsive.space(SizeScale.xxl),
-                        child: Icon(
-                          NotificationTypeUtils.getIcon(type),
-                          color: Colors.white,
-                          size: responsive.fontSize(SizeScale.xl),
+                if (!_isNotificationRead)
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 4,
+                      decoration: BoxDecoration(
+                        color: NotificationTypeUtils.getColor(widget.type),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(
+                            responsive.borderRadius(SizeScale.md),
+                          ),
+                          bottomLeft: Radius.circular(
+                            responsive.borderRadius(SizeScale.md),
+                          ),
                         ),
                       ),
                     ),
-                    if (isRead)
-                      Positioned(
-                        right: 0,
+                  ),
+                SizedBox(width: responsive.space(SizeScale.md)),
+                Padding(
+                  padding: EdgeInsets.all(responsive.space(SizeScale.md)),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
                         child: Container(
-                          width: responsive.space(SizeScale.xs),
-                          height: responsive.space(SizeScale.xs),
+                          key: ValueKey<bool>(_isNotificationRead),
+                          width: responsive.space(SizeScale.xxl),
+                          height: responsive.space(SizeScale.xxl),
                           decoration: BoxDecoration(
-                            color:
-                                HSLColor.fromColor(AppColors.accent4)
-                                    .withSaturation(1.0) // Saturation maksimal
-                                    .withLightness(0.4) // Lebih gelap
-                                    .toColor(),
+                            color: NotificationTypeUtils.getColor(
+                              widget.type,
+                            ).withOpacity(_isNotificationRead ? 0.7 : 1.0),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            Icons.priority_high,
-                            size: responsive.space(SizeScale.xs),
-                            color: AppColors.accent4,
+                            NotificationTypeUtils.getIcon(widget.type),
+                            color: Colors.white,
+                            size: responsive.fontSize(SizeScale.lg),
                           ),
                         ),
                       ),
-                  ],
-                ),
-                SizedBox(width: responsive.space(SizeScale.md)),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            // child: Text(
-                            //   title,
-                            //   style: theme.textTheme.bodyMedium?.copyWith(
-                            //     fontWeight:
-                            //         isRead
-                            //             ? FontWeight.normal
-                            //             : FontWeight.bold,
-                            //     color:
-                            //         isRead
-                            //             ? theme.colorScheme.onSurface
-                            //                 .withOpacity(0.7)
-                            //             : theme.colorScheme.onSurface,
-                            //   ),
-                            //   maxLines: 2,
-                            //   overflow: TextOverflow.ellipsis,
-                            // ),
-                            child: NotificationText(
-                              title: title,
-                              isRead: isRead,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: responsive.space(SizeScale.xs)),
-                      Text(
-                        NotificationTypeUtils.getSender(type),
 
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                      SizedBox(height: responsive.space(SizeScale.xs)),
-                      Row(
-                        children: [
-                          Text(
-                            _formatTime(time),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withOpacity(
-                                0.5,
+                      SizedBox(width: responsive.space(SizeScale.md)),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: NotificationText(
+                                    title: widget.title,
+                                    isRead: _isNotificationRead,
+                                  ),
+                                ),
+                                if (!_isNotificationRead)
+                                  Container(
+                                    padding: EdgeInsets.all(
+                                      responsive.space(SizeScale.xs),
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: NotificationTypeUtils.getColor(
+                                        widget.type,
+                                      ).withOpacity(0.2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.circle,
+                                      size: responsive.space(SizeScale.xs),
+                                      color: NotificationTypeUtils.getColor(
+                                        widget.type,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            SizedBox(height: responsive.space(SizeScale.xs)),
+                            Text(
+                              NotificationTypeUtils.getSender(widget.type),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface.withOpacity(
+                                  0.6,
+                                ),
                               ),
                             ),
-                          ),
-                          const Spacer(),
-                          Icon(
-                            Icons.chevron_right,
-                            size: responsive.fontSize(SizeScale.md),
-                            color: theme.colorScheme.onSurface.withOpacity(0.4),
-                          ),
-                        ],
+                            SizedBox(height: responsive.space(SizeScale.xs)),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  size: responsive.fontSize(SizeScale.sm),
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.5),
+                                ),
+                                SizedBox(width: responsive.space(SizeScale.xs)),
+                                Text(
+                                  _formatTime(widget.time),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.5),
+                                  ),
+                                ),
+                                const Spacer(),
+                                Icon(
+                                  Icons.chevron_right,
+                                  size: responsive.fontSize(SizeScale.md),
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.4),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -192,8 +286,11 @@ class NotificationText extends StatelessWidget {
   final String title;
   final bool isRead;
 
-  const NotificationText({Key? key, required this.title, required this.isRead})
-    : super(key: key);
+  const NotificationText({
+    super.key,
+    required this.title,
+    required this.isRead,
+  });
 
   String _cleanBrokenCharacters(String input) {
     final RegExp brokenCharsRegex = RegExp(r'[\uFFFD\u00F0\x00-\x1F]');
@@ -204,17 +301,19 @@ class NotificationText extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cleanedTitle = _cleanBrokenCharacters(title);
-    return Text(
-      cleanedTitle,
-      style: theme.textTheme.bodyMedium?.copyWith(
-        fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-        color:
-            isRead
-                ? theme.colorScheme.onSurface.withOpacity(0.7)
-                : theme.colorScheme.onSurface,
-      ),
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
+
+    return AnimatedDefaultTextStyle(
+      duration: const Duration(milliseconds: 200),
+      style:
+          theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+            color:
+                isRead
+                    ? theme.colorScheme.onSurface.withOpacity(0.8)
+                    : theme.colorScheme.onSurface,
+          ) ??
+          TextStyle(),
+      child: Text(cleanedTitle, maxLines: 2, overflow: TextOverflow.ellipsis),
     );
   }
 }

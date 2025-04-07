@@ -65,5 +65,8 @@ class Config {
       "/api/masyarakat/retrieve-notification";
   static const String retrieveUnreadNotificationCount =
       "/api/masyarakat/unread-notification-count";
+
+  static const String markNotificationAsRead =
+      "/api/masyarakat/read-notification";
   static const String fallbackImage = "https://picsum.photos/200/300";
 }
