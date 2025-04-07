@@ -11,8 +11,10 @@ import 'package:pa2_kelompok07/core/constant/constant.dart';
 import 'package:pa2_kelompok07/core/helpers/logger/logger.dart';
 import 'package:pa2_kelompok07/core/models/notification_channel_model.dart';
 import 'package:pa2_kelompok07/main.dart';
+import 'package:pa2_kelompok07/screens/admin/pages/Laporan/component/tracking_detail_page.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/Laporan/detail_report_screen.dart';
 import 'package:pa2_kelompok07/screens/appointment/appointment_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -107,7 +109,6 @@ class NotificationService {
     final notificationId =
         notification.receivedTime.millisecondsSinceEpoch.hashCode.abs() %
         2147483647;
-    // Customize notification based on type
     final androidDetails = AndroidNotificationDetails(
       _androidChannel.id,
       _androidChannel.name,
@@ -125,7 +126,8 @@ class NotificationService {
               ? InboxStyleInformation(
                 [content.body!],
                 contentTitle: content.title,
-                summaryText: 'Status Laporan Diperbarui',
+                // summaryText: 'Status Laporan Diperbarui',
+                summaryText: content.body,
               )
               : null,
     );
@@ -169,6 +171,8 @@ class NotificationService {
         return AppColors.primary;
       case NotificationType.unknown:
         return AppColors.error;
+      case NotificationType.trackingUpdate:
+        return AppColors.accent1;
     }
   }
 
@@ -184,21 +188,54 @@ class NotificationService {
     });
   }
 
-  void _handleMessageAction(RemoteMessage message) {
-    final appNotification = AppNotification.fromRemoteMessage(message);
-    _logger.log('Handling notification action: ${appNotification.data}');
-    _navigateBasedOnNotification(appNotification);
+  Future<void> saveNotificationData(AppNotification notification) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      'pending_notification',
+      jsonEncode(notification.toJson()),
+    );
   }
 
+  Future<AppNotification?> getPendingNotification() async {
+    final prefs = await SharedPreferences.getInstance();
+    final notificationJson = prefs.getString('pending_notification');
+    if (notificationJson != null) {
+      return AppNotification.fromJson(jsonDecode(notificationJson));
+    }
+    return null;
+  }
+
+  Future<void> clearPendingNotification() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('pending_notification');
+  }
+
+  void _handleMessageAction(RemoteMessage message) {
+    final appNotification = AppNotification.fromRemoteMessage(message);
+    _logger.log('Menyimpan untuk preapare Saat Callback Router');
+    saveNotificationData(appNotification);
+    _logger.log('Handling notification action: ${appNotification.data}');
+    navigateBasedOnNotification(appNotification);
+  }
+
+  // INI ERROR
   void _handleNotificationResponse(NotificationResponse response) {
     _logger.log('Notification clicked with payload: ${response.payload}');
+    _logger.log('🔔 NotificationResponse Received:');
+    _logger.log('  ▶️ payload: ${response.payload}');
+    _logger.log(
+      '  ▶️ notificationResponseType: ${response.notificationResponseType}',
+    );
+    _logger.log('  ▶️ actionId: ${response.actionId}');
+    _logger.log('  ▶️ input (text response): ${response.input}');
     if (response.payload == null) return;
 
     try {
       final payload = jsonDecode(response.payload!);
       final type = payload['type'] as String?;
       final data = payload['data'] as Map<String, dynamic>?;
-
+      _logger.log("INI PAYLOAD: $payload");
+      _logger.log("INI DATA: $data");
       if (type == null || data == null) return;
 
       switch (type) {
@@ -227,6 +264,14 @@ class NotificationService {
             // TODO: Navigasi ke layar appointment
           }
           break;
+        case 'tracking_update':
+          final reportData = data['reportData'] as Map<String, dynamic>?;
+          if (reportData != null) {
+            final reportId = reportData['reportId'] as String?;
+            if (reportId != null) {
+              _navigateToReportDetail(reportId, trackingDestination: true);
+            }
+          }
         default:
           _logger.log('Unknown notification type: $type');
       }
@@ -235,7 +280,7 @@ class NotificationService {
     }
   }
 
-  void _navigateBasedOnNotification(AppNotification notification) {
+  void navigateBasedOnNotification(AppNotification notification) {
     switch (notification.data.type) {
       case NotificationType.reportStatus:
         if (notification.data.reportStatusData != null) {
@@ -254,22 +299,38 @@ class NotificationService {
         );
         // TODO: Navigasi ke layar appointment
         break;
+      case NotificationType.trackingUpdate:
+        if (notification.data.reportStatusData != null) {
+          final reportId = notification.data.reportStatusData!.reportId;
+          _navigateToReportDetail(reportId, trackingDestination: true);
+        }
       case NotificationType.unknown:
         _logger.log('Unknown notification type: ${notification.data.type}');
         break;
     }
   }
 
-  void _navigateToReportDetail(String reportId) {
+  void _navigateToReportDetail(
+    String reportId, {
+    bool trackingDestination = false,
+  }) {
     _logger.log('Navigating to report detail with ID: $reportId');
 
     final context = navigatorKey.currentContext;
     if (context != null) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => DetailReportScreen(noRegistrasi: reportId),
-        ),
-      );
+      if (trackingDestination) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => TrackingPage(noRegistrasi: reportId),
+          ),
+        );
+      } else {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => DetailReportScreen(noRegistrasi: reportId),
+          ),
+        );
+      }
     } else {
       _logger.log('No context available for navigation');
     }

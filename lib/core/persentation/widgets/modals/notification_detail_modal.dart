@@ -246,7 +246,9 @@ class _NotificationDetailState extends State<NotificationDetail>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Status Laporan',
+                                    NotificationTypeUtils.getSender(
+                                      notification.type,
+                                    ),
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: theme.colorScheme.onSurface
                                           .withOpacity(0.6),
@@ -303,7 +305,6 @@ class _NotificationDetailState extends State<NotificationDetail>
 
                     SizedBox(height: responsive.space(SizeScale.lg)),
 
-                    // Action buttons
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -383,8 +384,14 @@ class _NotificationDetailState extends State<NotificationDetail>
         return Colors.red;
       case 'pending':
         return Colors.blue;
+      case 'new_tracking':
+        return Colors.greenAccent;
+      case 'updated_tracking':
+        return Colors.grey.shade800;
+      case 'deleted_tracking':
+        return Colors.red.shade800;
       default:
-        return Colors.grey;
+        return Colors.grey; // Warna default
     }
   }
 
@@ -398,6 +405,12 @@ class _NotificationDetailState extends State<NotificationDetail>
         return Icons.cancel;
       case 'pending':
         return Icons.access_time;
+      case 'new_tracking':
+        return Icons.new_releases;
+      case 'updated_tracking':
+        return Icons.update;
+      case 'deleted_tracking':
+        return Icons.delete;
       default:
         return Icons.info;
     }
@@ -424,6 +437,12 @@ class _NotificationDetailState extends State<NotificationDetail>
         return 'Ditolak';
       case 'pending':
         return 'Menunggu';
+      case 'new_tracking':
+        return "Traking Baru";
+      case 'updated_tracking':
+        return "Tracking di perbarui";
+      case 'deleted_tracking':
+        return "Tracking di hapus";
       default:
         return status ?? '-';
     }

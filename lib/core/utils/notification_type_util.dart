@@ -11,8 +11,11 @@ class NotificationTypeUtils {
         return Icons.calendar_today;
       case NotificationType.reportStatus:
         return Icons.assignment;
+
+      case NotificationType.trackingUpdate:
+        return Icons.spatial_tracking;
       default:
-        return Icons.error;
+        return Icons.query_stats;
     }
   }
 
@@ -24,6 +27,8 @@ class NotificationTypeUtils {
         return AppColors.accent1;
       case NotificationType.reportStatus:
         return AppColors.warning;
+      case NotificationType.trackingUpdate:
+        return AppColors.accent2;
       default:
         return AppColors.error;
     }
@@ -37,6 +42,8 @@ class NotificationTypeUtils {
         return 'Janji Temu';
       case NotificationType.reportStatus:
         return 'Status Laporan';
+      case NotificationType.trackingUpdate:
+        return 'Tracking Laporan Baru';
       default:
         return 'Unknown';
     }

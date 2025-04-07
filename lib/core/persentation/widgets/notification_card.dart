@@ -30,7 +30,6 @@ class _NotificationCardState extends State<NotificationCard>
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<Color?> _backgroundColorAnimation;
-  // late Animation<double> _opacityAnimation;
   late bool _isNotificationRead;
   @override
   void initState() {
@@ -46,11 +45,6 @@ class _NotificationCardState extends State<NotificationCard>
       end: 1.0,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
-    // _opacityAnimation = Tween<double>(
-    //   begin: 0.6,
-    //   end: 1.0,
-    // ).animate(_controller);
-
     _controller.forward();
     _isNotificationRead = widget.isRead;
   }
@@ -59,7 +53,6 @@ class _NotificationCardState extends State<NotificationCard>
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // Inisialisasi _backgroundColorAnimation dengan context yang aman di sini
     _backgroundColorAnimation = ColorTween(
       begin: Colors.transparent,
       end:
@@ -130,13 +123,13 @@ class _NotificationCardState extends State<NotificationCard>
           borderRadius: BorderRadius.circular(
             responsive.borderRadius(SizeScale.md),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(_isNotificationRead ? 0.05 : 0.1),
-              blurRadius: .5,
-              // offset: const Offset(0, 1),
-            ),
-          ],
+          // boxShadow: [
+          //   BoxShadow(
+          //     color: Colors.black.withOpacity(_isNotificationRead ? 0.05 : 0.1),
+          //     blurRadius: .5,
+          //     // offset: const Offset(0, 1),
+          //   ),
+          // ],
         ),
         child: Material(
           color: Colors.transparent,

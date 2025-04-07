@@ -56,6 +56,16 @@ class UserProvider with ChangeNotifier {
       await setUserDetails(_user!);
       notifyListeners();
       await _checkAndUpdateTokenOnLogin();
+
+      final pendingNotification =
+          await NotificationService.instance.getPendingNotification();
+      if (pendingNotification != null) {
+        NotificationService.instance.navigateBasedOnNotification(
+          pendingNotification,
+        );
+        await NotificationService.instance.clearPendingNotification();
+      }
+
       return true;
     } catch (e) {
       _logger.log('Error login: $e');
@@ -222,7 +232,10 @@ class UserProvider with ChangeNotifier {
         return;
       }
       await APIService().markNotificationAsRead(_userToken!, notificationId);
-      _unreadCount = _unreadCount - 1;
+
+      if (_unreadCount > 0) {
+        _unreadCount = _unreadCount - 1;
+      }
       notifyListeners();
     } catch (e) {
       _logger.log('Error fetching Mark Notification as Read: $e');

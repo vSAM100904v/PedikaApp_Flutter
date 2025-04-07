@@ -1,6 +1,15 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:convert';
 
-enum NotificationType { chat, appointment, reportStatus, unknown }
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/cupertino.dart';
+
+enum NotificationType {
+  chat,
+  appointment,
+  reportStatus,
+  unknown,
+  trackingUpdate,
+}
 
 extension NotificationTypeExtension on NotificationType {
   String get stringValue {
@@ -11,6 +20,8 @@ extension NotificationTypeExtension on NotificationType {
         return 'appointment';
       case NotificationType.reportStatus:
         return 'report_status';
+      case NotificationType.trackingUpdate:
+        return 'tracking_update';
       default:
         return 'unknown';
     }
@@ -24,6 +35,8 @@ extension NotificationTypeExtension on NotificationType {
         return 'chat';
       case NotificationType.appointment:
         return 'appointment';
+      case NotificationType.trackingUpdate:
+        return 'tracking_update';
       case NotificationType.unknown:
         return 'unknown';
     }
@@ -37,6 +50,8 @@ extension NotificationTypeExtension on NotificationType {
         return NotificationType.appointment;
       case 'report_status':
         return NotificationType.reportStatus;
+      case 'tracking_update' || 'tracking_report':
+        return NotificationType.trackingUpdate;
       default:
         throw Exception('Unknown NotificationType: $value');
     }
@@ -67,8 +82,6 @@ extension ReportStatusExtension on ReportStatus {
         return 'requires_action';
       case ReportStatus.waitingApproval:
         return 'waiting_approval';
-      default:
-        return 'unknown';
     }
   }
 
@@ -106,6 +119,17 @@ class NotificationContent {
       imageUrl: notification?.android?.imageUrl,
     );
   }
+  Map<String, dynamic> toJson() {
+    return {'title': title, 'body': body, 'imageUrl': imageUrl};
+  }
+
+  factory NotificationContent.fromJson(Map<String, dynamic> json) {
+    return NotificationContent(
+      title: json['title'] as String?,
+      body: json['body'] as String?,
+      imageUrl: json['imageUrl'] as String?,
+    );
+  }
 
   @override
   String toString() {
@@ -140,7 +164,28 @@ class ReportStatusData {
       notes: data['notes'] as String?,
     );
   }
+  Map<String, dynamic> toJson() {
+    return {
+      'reportId': reportId,
+      'status': status.stringValue,
+      'updatedBy': updatedBy,
+      'updatedAt': updatedAt?.toIso8601String(),
+      'notes': notes,
+    };
+  }
 
+  factory ReportStatusData.fromJson(Map<String, dynamic> json) {
+    return ReportStatusData(
+      reportId: json['reportId'] as String,
+      status: _parseReportStatus(json['status'] as String),
+      updatedBy: json['updatedBy'] as String?,
+      updatedAt:
+          json['updatedAt'] != null
+              ? DateTime.parse(json['updatedAt'] as String)
+              : null,
+      notes: json['notes'] as String?,
+    );
+  }
   static ReportStatus _parseReportStatus(String status) {
     switch (status) {
       case 'received':
@@ -175,18 +220,32 @@ class NotificationData {
   });
 
   factory NotificationData.fromMap(Map<String, dynamic> data) {
-    final typeString = data['type']?.toString().toLowerCase();
-    final type = _parseNotificationType(typeString);
+    print('📥 Incoming data map: ${jsonEncode(data)}');
 
-    return NotificationData(
+    final typeString = data['type']?.toString().toLowerCase();
+    print('🔍 Parsed type string: $typeString');
+
+    final type = _parseNotificationType(typeString);
+    print('✅ Converted to NotificationType: $type');
+
+    final reportData = ReportStatusData.fromMap(data);
+
+    if (reportData != null) {
+      print('🧾 Parsed ReportStatusData: ${reportData.toJson()}');
+    }
+    print(
+      "INIIII REPORTTTTTTTTTTTT DATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA $reportData",
+    );
+    final notificationData = NotificationData(
       type: type,
       chatId: data['chatId'] as String?,
       appointmentId: data['appointmentId'] as String?,
-      reportStatusData:
-          type == NotificationType.reportStatus
-              ? ReportStatusData.fromMap(data)
-              : null,
+      reportStatusData: reportData,
     );
+
+    print('📦 Final NotificationData: ${notificationData.toJson()}');
+
+    return notificationData;
   }
 
   static NotificationType _parseNotificationType(String? typeString) {
@@ -196,11 +255,36 @@ class NotificationData {
       case 'report_status':
         return NotificationType.reportStatus;
       case 'chat':
+        return NotificationType.chat;
+      case 'tracking_update':
+        return NotificationType.trackingUpdate;
       default:
         return NotificationType.chat;
     }
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'type': type.value,
+      if (chatId != null) 'chatId': chatId,
+      if (appointmentId != null) 'appointmentId': appointmentId,
+      if (reportStatusData != null) ...reportStatusData!.toJson(),
+    };
+  }
+
+  factory NotificationData.fromJson(Map<String, dynamic> json) {
+    final type = _parseNotificationType(json['type'] as String?);
+
+    return NotificationData(
+      type: type,
+      chatId: json['chatId'] as String?,
+      appointmentId: json['appointmentId'] as String?,
+      reportStatusData:
+          type == NotificationType.reportStatus
+              ? ReportStatusData.fromJson(json)
+              : null,
+    );
+  }
   @override
   String toString() {
     return 'NotificationData{'
@@ -230,7 +314,23 @@ class AppNotification {
       receivedTime: message.sentTime?.toLocal(),
     );
   }
+  Map<String, dynamic> toJson() {
+    return {
+      'content': content.toJson(),
+      'data': data.toJson(),
+      'receivedTime': receivedTime.toIso8601String(),
+    };
+  }
 
+  factory AppNotification.fromJson(Map<String, dynamic> json) {
+    return AppNotification(
+      content: NotificationContent.fromJson(
+        json['content'] as Map<String, dynamic>,
+      ),
+      data: NotificationData.fromJson(json['data'] as Map<String, dynamic>),
+      receivedTime: DateTime.parse(json['receivedTime'] as String),
+    );
+  }
   @override
   String toString() {
     return 'AppNotification{'

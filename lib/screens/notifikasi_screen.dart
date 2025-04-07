@@ -3,6 +3,7 @@ import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 import 'package:pa2_kelompok07/core/constant/seed.dart';
 import 'package:pa2_kelompok07/core/helpers/hooks/responsive_sizes.dart';
+import 'package:pa2_kelompok07/core/helpers/hooks/screen_navigator.dart';
 import 'package:pa2_kelompok07/core/helpers/logger/text_logger.dart';
 import 'package:pa2_kelompok07/core/helpers/toasters/toast.dart';
 import 'package:pa2_kelompok07/core/models/notification_channel_model.dart';
@@ -12,6 +13,7 @@ import 'package:pa2_kelompok07/core/persentation/widgets/modals/notification_det
 import 'package:pa2_kelompok07/core/persentation/widgets/notification_card.dart';
 import 'package:pa2_kelompok07/provider/notification_query_provider.dart';
 import 'package:pa2_kelompok07/provider/user_provider.dart';
+import 'package:pa2_kelompok07/screens/admin/pages/Laporan/component/tracking_detail_page.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/Laporan/detail_report_screen.dart';
 import 'package:pa2_kelompok07/services/api_service.dart';
 import 'package:pa2_kelompok07/styles/color.dart';
@@ -134,7 +136,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                         title: notification.title,
                         type: notification.type,
                         time: notification.createdAt,
-                        isRead: false,
+                        isRead: notification.isRead,
                         onTap: () => _handleNotificationTap(notification),
                       ),
                   firstPageProgressIndicatorBuilder:
@@ -165,11 +167,10 @@ class _NotificationScreenState extends State<NotificationScreen>
     debugLog('Notification tapped: ${notification.data}');
 
     if (!notification.isRead) {
-      final updatedNotification = notification.copyWith(isRead: true);
       await markNotificationAsRead(notification.id);
     }
-    ;
 
+    if (!mounted) return;
     await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -183,6 +184,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                 break;
               case NotificationType.appointment:
                 // Navigator.push(...);
+
                 break;
               case NotificationType.reportStatus:
                 Navigator.push(
@@ -195,8 +197,18 @@ class _NotificationScreenState extends State<NotificationScreen>
                   ),
                 );
                 break;
+              case NotificationType.trackingUpdate:
+                ScreenNavigator(cx: context).navigate(
+                  TrackingPage(
+                    noRegistrasi: notification.data.reportId.toString(),
+                  ),
+                  NavigatorTweens.bottomToTop(),
+                );
+                break;
               default:
-                return null;
+                return context.toast.showError(
+                  "Ada massalah, hubungi petugas ya",
+                );
             }
           },
         );

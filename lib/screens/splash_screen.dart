@@ -1,5 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pa2_kelompok07/provider/user_provider.dart';
+import 'package:pa2_kelompok07/screens/auth/login_screen.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pa2_kelompok07/navigationBar/bottom_bar.dart';
 import 'package:pa2_kelompok07/screens/beranda_screen.dart';
@@ -23,9 +26,15 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     Future.delayed(const Duration(seconds: 3), () async {
       bool onBoardingViewed = await _checkIfOnBoardingViewed();
-
+      final isAunthenticated =
+          Provider.of<UserProvider>(context, listen: false).isLoggedIn;
       if (!mounted) return;
 
+      if (!isAunthenticated) {
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
+      }
       if (onBoardingViewed) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const BottomNavigationWidget()),

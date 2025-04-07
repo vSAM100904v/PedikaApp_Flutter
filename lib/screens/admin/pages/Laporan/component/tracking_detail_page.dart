@@ -1,33 +1,37 @@
 import 'dart:convert';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
+import 'package:pa2_kelompok07/config.dart';
+import 'package:pa2_kelompok07/core/constant/seed.dart';
+import 'package:pa2_kelompok07/core/helpers/hooks/responsive_sizes.dart';
+import 'package:pa2_kelompok07/core/helpers/logger/logger.dart';
+import 'package:pa2_kelompok07/core/helpers/logger/text_logger.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/atoms/placeholder_component.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/tracking_card.dart';
+import 'package:pa2_kelompok07/provider/report_provider.dart';
+import 'package:pa2_kelompok07/styles/color.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../../model/report/full_report_model.dart';
-import '../../../../../model/report/tracking_report_model.dart';
-import '../../../../../provider/report_provider.dart';
-import '../../../../../styles/color.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TrackingPage extends StatefulWidget {
   final String noRegistrasi;
 
-  TrackingPage({Key? key, required this.noRegistrasi}) : super(key: key);
+  const TrackingPage({super.key, required this.noRegistrasi});
 
   @override
-  _TrackingPageState createState() => _TrackingPageState();
+  State<TrackingPage> createState() => _TrackingPageState();
 }
 
-class _TrackingPageState extends State<TrackingPage> {
-  Future<DetailResponseModel>? reportDetailFuture;
-
+class _TrackingPageState extends State<TrackingPage> with TextLogger {
   @override
   void initState() {
     super.initState();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ReportProvider>(
         context,
         listen: false,
@@ -35,27 +39,13 @@ class _TrackingPageState extends State<TrackingPage> {
     });
   }
 
-  String formatDate(String dateStr) {
-    try {
-      final date = DateTime.parse(dateStr);
-      return DateFormat('HH:mm', 'id_ID').format(date);
-    } catch (e) {
-      debugPrint("Error parsing date: $e");
-      return "Invalid date";
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Detail Laporannn",
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
+          "Tracking Page",
+          style: TextStyle(color: Colors.white),
         ),
         backgroundColor: AppColor.primaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -65,48 +55,31 @@ class _TrackingPageState extends State<TrackingPage> {
           if (reportProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           } else if (reportProvider.errorMessage != null) {
-            return Center(child: Text('Error: ${reportProvider.errorMessage}'));
+            return const PlaceHolderComponent(state: PlaceHolderState.error);
           } else if (reportProvider.detailReport != null) {
-            final detail = reportProvider.detailReport!.data;
-            List<TrackingLaporanModel> sortedTracking =
-                List<TrackingLaporanModel>.from(detail.trackingLaporan);
-            sortedTracking.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+            final detail = reportProvider.detailReport!.data.trackingLaporan;
+            debugLog(
+              "detailReport.toString(): ${reportProvider.detailReport!.data.trackingLaporan}",
+            );
+
+            if (detail.isEmpty) {
+              return const PlaceHolderComponent(
+                state: PlaceHolderState.emptyTracking,
+              );
+            }
             return ListView.builder(
-              itemCount: sortedTracking.length,
+              padding: EdgeInsets.only(
+                top: context.responsive.space(SizeScale.md),
+              ),
+              itemCount: detail.length,
               itemBuilder: (context, index) {
-                final tracking = sortedTracking[index];
-                String jam = DateFormat(
-                  'HH:mm',
-                  'id_ID',
-                ).format(tracking.updatedAt);
-                return Column(
-                  children: [
-                    ListTile(
-                      leading: Text(
-                        jam,
-                        style: const TextStyle(
-                          fontSize: 12.0,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      title: Text(
-                        tracking.keterangan,
-                        style: const TextStyle(fontSize: 14.0),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children:
-                            tracking.documents
-                                .map((url) => buildContent(url))
-                                .toList(),
-                      ),
-                      isThreeLine: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 5.0,
-                        horizontal: 20.0,
-                      ),
-                    ),
-                  ],
+                final isLatest = index == 0;
+                return TrackingCard(
+                  tracking: detail[index],
+                  isLatest: isLatest,
+                  onTap: () {
+                    // Handle card tap if needed
+                  },
                 );
               },
             );
@@ -116,29 +89,5 @@ class _TrackingPageState extends State<TrackingPage> {
         },
       ),
     );
-  }
-
-  Widget buildContent(String url) {
-    if (url.endsWith(".pdf")) {
-      return TextButton(
-        child: Text("Open PDF"),
-        onPressed: () => _launchURL(url),
-      );
-    } else {
-      return Image.network(
-        url,
-        fit: BoxFit.cover,
-        errorBuilder:
-            (context, error, stackTrace) => Text("Failed to load image"),
-      );
-    }
-  }
-
-  Future<void> _launchURL(String url) async {
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      debugPrint('Could not launch $url');
-    }
   }
 }
