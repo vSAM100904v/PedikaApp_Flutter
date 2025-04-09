@@ -1,6 +1,10 @@
 import 'package:pa2_kelompok07/model/report/report_category_model.dart';
 import 'package:pa2_kelompok07/model/report/report_request_model.dart';
 
+import 'dart:developer' as developer; // Untuk logging
+import 'package:pa2_kelompok07/model/report/report_category_model.dart';
+import 'package:pa2_kelompok07/model/report/report_request_model.dart';
+
 class ListLaporanModel {
   String alamatDetailTkp;
   String alamatTkp;
@@ -25,7 +29,7 @@ class ListLaporanModel {
   ListLaporanModel({
     required this.alamatDetailTkp,
     required this.alamatTkp,
-    this.alasanDibatalkan = "",
+    required this.alasanDibatalkan,
     required this.createdAt,
     required this.dokumentasi,
     required this.kategoriKekerasanId,
@@ -44,30 +48,88 @@ class ListLaporanModel {
     this.waktuDiproses,
   });
 
-  factory ListLaporanModel.fromJson(Map<String, dynamic> json) =>
-      ListLaporanModel(
-        alamatDetailTkp: json['alamat_detail_tkp'],
-        alamatTkp: json['alamat_tkp'],
-        alasanDibatalkan: json['alasan_dibatalkan'] ?? "",
-        createdAt: DateTime.parse(json['created_at']),
-        dokumentasi: Dokumentasi.fromJson(json['dokumentasi']),
-        kategoriKekerasanId: json['kategori_kekerasan_id'],
-        kategoriLokasiKasus: json['kategori_lokasi_kasus'],
-        kronologisKasus: json['kronologis_kasus'],
-        noRegistrasi: json['no_registrasi'],
-        status: json['status'],
-        tanggalKejadian: DateTime.parse(json['tanggal_kejadian']),
-        tanggalPelaporan: DateTime.parse(json['tanggal_pelaporan']),
-        updatedAt: DateTime.parse(json['updated_at']),
-        userId: json['user_id'],
-        useridMelihat: json['userid_melihat'],
-        violenceCategoryDetail: ViolenceCategory.fromJson(
-          json['violence_category_detail'],
-        ),
-        waktuDibatalkan: json['waktu_dibatalkan'],
-        waktuDilihat: json['waktu_dilihat'],
-        waktuDiproses: json['waktu_diproses'],
-      );
+  factory ListLaporanModel.fromJson(Map<String, dynamic> json) {
+    // Logging untuk field yang null atau kosong
+    void logIfEmpty(String fieldName, dynamic value) {
+      if (value == null || (value is String && value.isEmpty)) {
+        developer.log('Field "$fieldName" kosong atau null: $value');
+      }
+    }
+
+    // Default DateTime jika parsing gagal
+    final defaultDateTime = DateTime(1970, 1, 1);
+
+    // Cek dan log setiap field
+    logIfEmpty('alamat_detail_tkp', json['alamat_detail_tkp']);
+    logIfEmpty('alamat_tkp', json['alamat_tkp']);
+    logIfEmpty('alasan_dibatalkan', json['alasan_dibatalkan']);
+    logIfEmpty('created_at', json['created_at']);
+    logIfEmpty('dokumentasi', json['dokumentasi']);
+    logIfEmpty('kategori_kekerasan_id', json['kategori_kekerasan_id']);
+    logIfEmpty('kategori_lokasi_kasus', json['kategori_lokasi_kasus']);
+    logIfEmpty('kronologis_kasus', json['kronologis_kasus']);
+    logIfEmpty('no_registrasi', json['no_registrasi']);
+    logIfEmpty('status', json['status']);
+    logIfEmpty('tanggal_kejadian', json['tanggal_kejadian']);
+    logIfEmpty('tanggal_pelaporan', json['tanggal_pelaporan']);
+    logIfEmpty('updated_at', json['updated_at']);
+    logIfEmpty('user_id', json['user_id']);
+    logIfEmpty('userid_melihat', json['userid_melihat']);
+    logIfEmpty('violence_category', json['violence_category']);
+    logIfEmpty('waktu_dibatalkan', json['waktu_dibatalkan']);
+    logIfEmpty('waktu_dilihat', json['waktu_dilihat']);
+    logIfEmpty('waktu_diproses', json['waktu_diproses']);
+
+    return ListLaporanModel(
+      alamatDetailTkp:
+          json['alamat_detail_tkp'] as String? ?? 'Tidak diketahui',
+      alamatTkp: json['alamat_tkp'] as String? ?? 'Tidak diketahui',
+      alasanDibatalkan: json['alasan_dibatalkan'] as String? ?? '',
+      createdAt:
+          DateTime.tryParse(json['created_at'] as String? ?? '') ??
+          defaultDateTime,
+      dokumentasi:
+          json['dokumentasi'] != null
+              ? Dokumentasi.fromJson(
+                json['dokumentasi'] as Map<String, dynamic>,
+              )
+              : Dokumentasi(urls: []), // Default jika null
+      kategoriKekerasanId: json['kategori_kekerasan_id'] as int? ?? 0,
+      kategoriLokasiKasus:
+          json['kategori_lokasi_kasus'] as String? ?? 'Tidak diketahui',
+      kronologisKasus:
+          json['kronologis_kasus'] as String? ?? 'Tidak ada kronologi',
+      noRegistrasi:
+          json['no_registrasi'] as String? ?? 'Tidak ada nomor registrasi',
+      status: json['status'] as String? ?? 'Tidak diketahui',
+      tanggalKejadian:
+          DateTime.tryParse(json['tanggal_kejadian'] as String? ?? '') ??
+          defaultDateTime,
+      tanggalPelaporan:
+          DateTime.tryParse(json['tanggal_pelaporan'] as String? ?? '') ??
+          defaultDateTime,
+      updatedAt:
+          DateTime.tryParse(json['updated_at'] as String? ?? '') ??
+          defaultDateTime,
+      userId: json['user_id'] as int? ?? 0,
+      useridMelihat: json['userid_melihat'] as int?,
+      violenceCategoryDetail:
+          json['violence_category'] != null
+              ? ViolenceCategory.fromJson(
+                json['violence_category'] as Map<String, dynamic>,
+              )
+              : ViolenceCategory(
+                id: 0,
+                categoryName: 'Kategori tidak diketahui',
+                image: '',
+                createdAt: defaultDateTime.toIso8601String(),
+                updatedAt: defaultDateTime.toIso8601String(),
+              ),
+      waktuDibatalkan: json['waktu_dibatalkan'] as String?,
+      waktuDilihat: json['waktu_dilihat'] as String?,
+      waktuDiproses: json['waktu_diproses'] as String?,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     'alamat_detail_tkp': alamatDetailTkp,
@@ -85,11 +147,57 @@ class ListLaporanModel {
     'updated_at': updatedAt.toIso8601String(),
     'user_id': userId,
     'userid_melihat': useridMelihat,
-    'violence_category_detail': violenceCategoryDetail.toJson(),
+    'violence_category': violenceCategoryDetail.toJson(),
     'waktu_dibatalkan': waktuDibatalkan,
     'waktu_dilihat': waktuDilihat,
     'waktu_diproses': waktuDiproses,
   };
+
+  // Metode copyWith
+  ListLaporanModel copyWith({
+    String? alamatDetailTkp,
+    String? alamatTkp,
+    String? alasanDibatalkan,
+    DateTime? createdAt,
+    Dokumentasi? dokumentasi,
+    int? kategoriKekerasanId,
+    String? kategoriLokasiKasus,
+    String? kronologisKasus,
+    String? noRegistrasi,
+    String? status,
+    DateTime? tanggalKejadian,
+    DateTime? tanggalPelaporan,
+    DateTime? updatedAt,
+    int? userId,
+    int? useridMelihat,
+    ViolenceCategory? violenceCategoryDetail,
+    String? waktuDibatalkan,
+    String? waktuDilihat,
+    String? waktuDiproses,
+  }) {
+    return ListLaporanModel(
+      alamatDetailTkp: alamatDetailTkp ?? this.alamatDetailTkp,
+      alamatTkp: alamatTkp ?? this.alamatTkp,
+      alasanDibatalkan: alasanDibatalkan ?? this.alasanDibatalkan,
+      createdAt: createdAt ?? this.createdAt,
+      dokumentasi: dokumentasi ?? this.dokumentasi,
+      kategoriKekerasanId: kategoriKekerasanId ?? this.kategoriKekerasanId,
+      kategoriLokasiKasus: kategoriLokasiKasus ?? this.kategoriLokasiKasus,
+      kronologisKasus: kronologisKasus ?? this.kronologisKasus,
+      noRegistrasi: noRegistrasi ?? this.noRegistrasi,
+      status: status ?? this.status,
+      tanggalKejadian: tanggalKejadian ?? this.tanggalKejadian,
+      tanggalPelaporan: tanggalPelaporan ?? this.tanggalPelaporan,
+      updatedAt: updatedAt ?? this.updatedAt,
+      userId: userId ?? this.userId,
+      useridMelihat: useridMelihat ?? this.useridMelihat,
+      violenceCategoryDetail:
+          violenceCategoryDetail ?? this.violenceCategoryDetail,
+      waktuDibatalkan: waktuDibatalkan ?? this.waktuDibatalkan,
+      waktuDilihat: waktuDilihat ?? this.waktuDilihat,
+      waktuDiproses: waktuDiproses ?? this.waktuDiproses,
+    );
+  }
 }
 
 class ResponseModel {

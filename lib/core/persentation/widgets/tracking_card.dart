@@ -3,10 +3,206 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:pa2_kelompok07/core/constant/constant.dart';
 import 'package:pa2_kelompok07/core/helpers/hooks/responsive_sizes.dart';
+import 'package:pa2_kelompok07/core/helpers/hooks/text_style.dart';
 import 'package:pa2_kelompok07/core/persentation/widgets/custom_icon.dart';
 import 'package:pa2_kelompok07/model/report/tracking_report_model.dart';
 import 'package:pa2_kelompok07/styles/color.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+class TrackingCardAdmin extends StatelessWidget {
+  final TrackingLaporanModel tracking;
+  final bool isLatest;
+  final int position;
+  final int totalSteps;
+  final VoidCallback? onTap;
+  final bool isAdmin;
+  final VoidCallback? onUpdate;
+  final VoidCallback? onDelete;
+
+  const TrackingCardAdmin({
+    super.key,
+    required this.tracking,
+    this.isLatest = false,
+    required this.position,
+    required this.totalSteps,
+    this.onTap,
+    this.isAdmin = false,
+    this.onUpdate,
+    this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final responsive = context.responsive;
+    final textStyle = context.textStyle;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        margin: EdgeInsets.symmetric(
+          horizontal: responsive.space(SizeScale.md),
+          vertical: responsive.space(SizeScale.sm),
+        ),
+        padding: EdgeInsets.all(responsive.space(SizeScale.md)),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(
+            responsive.borderRadius(SizeScale.sm),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          border: Border.all(
+            color:
+                isLatest
+                    ? AppColors.primary.withOpacity(0.3)
+                    : Colors.grey[200]!,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildCustomStepper(context),
+            SizedBox(width: responsive.space(SizeScale.md)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        DateFormat(
+                          'dd MMM yyyy, HH:mm',
+                        ).format(tracking.updatedAt),
+                        style: textStyle.jakartaSansMedium(
+                          size: SizeScale.sm,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      if (isAdmin)
+                        PopupMenuButton(
+                          itemBuilder:
+                              (context) => [
+                                const PopupMenuItem(
+                                  value: 'update',
+                                  child: Text('Update'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text('Delete'),
+                                ),
+                              ],
+                          onSelected: (value) {
+                            if (value == 'update') onUpdate?.call();
+                            if (value == 'delete') onDelete?.call();
+                          },
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: responsive.space(SizeScale.sm)),
+                  Text(
+                    tracking.keterangan,
+                    style: textStyle.onestBold(
+                      size: SizeScale.md,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  if (tracking.documents.isNotEmpty)
+                    Padding(
+                      padding: EdgeInsets.only(
+                        top: responsive.space(SizeScale.sm),
+                      ),
+                      child: _buildDocumentsPreview(context),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomStepper(BuildContext context) {
+    final responsive = context.responsive;
+    final textStyle = context.textStyle;
+
+    return Column(
+      children: [
+        if (position > 1) // Draw line above if not first
+          Container(
+            width: 2,
+            height: responsive.space(SizeScale.lg),
+            color: AppColors.primary.withOpacity(0.3),
+          ),
+        Container(
+          width: responsive.space(SizeScale.lg),
+          height: responsive.space(SizeScale.lg),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isLatest ? AppColors.primary : Colors.grey[300],
+            border: Border.all(
+              color: isLatest ? AppColors.primary : Colors.grey[400]!,
+              width: 2,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              '$position',
+              style: textStyle.onestBold(
+                size: SizeScale.sm,
+                color: isLatest ? Colors.white : Colors.grey[700],
+              ),
+            ),
+          ),
+        ),
+        if (position < totalSteps) // Draw line below if not last
+          Container(
+            width: 2,
+            height: responsive.space(SizeScale.lg),
+            color: AppColors.primary.withOpacity(0.3),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildDocumentsPreview(BuildContext context) {
+    final responsive = context.responsive;
+    return SizedBox(
+      height: responsive.space(SizeScale.xxl),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: tracking.documents.length,
+        itemBuilder:
+            (context, index) => Padding(
+              padding: EdgeInsets.only(right: responsive.space(SizeScale.sm)),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(
+                  responsive.borderRadius(SizeScale.xs),
+                ),
+                child: CachedNetworkImage(
+                  imageUrl: tracking.documents[index],
+                  width: responsive.space(SizeScale.xxl),
+                  height: responsive.space(SizeScale.xxl),
+                  fit: BoxFit.cover,
+                  placeholder:
+                      (context, url) => const CircularProgressIndicator(),
+                  errorWidget: (context, url, error) => const Icon(Icons.error),
+                ),
+              ),
+            ),
+      ),
+    );
+  }
+}
 
 class TrackingCard extends StatelessWidget {
   final TrackingLaporanModel tracking;
@@ -177,9 +373,9 @@ class TrackingCard extends StatelessWidget {
   Widget _buildDocumentsSection(BuildContext context) {
     final responsive = context.responsive;
     final theme = Theme.of(context);
-    final validDocuments = tracking.documents;
-    // final validDocuments =
-    //     tracking.documents.where((url) => _isValidUrl(url)).toList();
+    // final validDocuments = tracking.documents;
+    final validDocuments =
+        tracking.documents.where((url) => _isValidUrl(url)).toList();
 
     if (validDocuments.isEmpty) return const SizedBox();
 

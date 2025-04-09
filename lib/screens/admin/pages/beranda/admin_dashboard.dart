@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
+import 'package:pa2_kelompok07/screens/laporan/laporan_anda_screen.dart';
 import '../../widgets/sidebar.dart';
 import '../Donasi/halaman_donasi.dart';
 import '../event/halaman_event.dart';
@@ -306,12 +307,17 @@ class _BerandaState extends State<Beranda> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Text(
-                  'Selamat datang',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pushNamed('/admin-layout');
+                  },
+                  child: const Text(
+                    'Selamat datang',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -896,6 +902,7 @@ class __AdminDashboardSectionState extends State<_AdminDashboardSection> {
 
   @override
   Widget build(BuildContext context) {
+    print("INI ISII DARI REPORTRS $reports");
     return isLoading
         ? const Center(child: CircularProgressIndicator())
         : Column(

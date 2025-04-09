@@ -1,17 +1,20 @@
+import 'dart:ui';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/animation.dart';
-import 'package:pa2_kelompok07/core/constant/constant.dart';
+import 'package:pa2_kelompok07/core/constant/constant.dart' show AppColors;
 import 'package:pa2_kelompok07/core/helpers/hooks/responsive_sizes.dart';
-import 'package:pa2_kelompok07/core/models/notification_channel_model.dart';
-import 'package:pa2_kelompok07/core/models/notification_response_model.dart';
-import 'package:pa2_kelompok07/core/persentation/widgets/custom_icon.dart';
-import 'package:pa2_kelompok07/core/utils/notification_type_util.dart';
-import 'package:pa2_kelompok07/styles/color.dart';
+import 'package:pa2_kelompok07/core/helpers/hooks/text_style.dart';
+import 'package:pa2_kelompok07/model/report/list_report_model.dart';
+
+const Color redColor = Color(0xFFFF0060);
+const Color grenColor = Color(0xFF00DFA2);
 
 class ActionDialog extends StatefulWidget {
-  final NotificationPayload notification;
-  final VoidCallback? onPressed;
-  const ActionDialog({super.key, required this.notification, this.onPressed});
+  final ListLaporanModel laporan;
+  final Function(String newStatus)?
+  onStatusUpdated; // Callback untuk update status
+  const ActionDialog({super.key, required this.laporan, this.onStatusUpdated});
 
   @override
   State<ActionDialog> createState() => _ActionDialogState();
@@ -23,11 +26,15 @@ class _ActionDialogState extends State<ActionDialog>
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  String _selectedAction = '';
 
   @override
   void initState() {
     super.initState();
+    _initAnimations();
+  }
 
+  void _initAnimations() {
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -57,11 +64,22 @@ class _ActionDialogState extends State<ActionDialog>
     super.dispose();
   }
 
+  void _handleAction(String action) {
+    setState(() => _selectedAction = action);
+    if (widget.onStatusUpdated != null) {
+      widget.onStatusUpdated!(action);
+    }
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     final responsive = context.responsive;
+    final theme = Theme.of(context);
+    final isProcessing =
+        widget.laporan.status == "Laporan masuk" ||
+        widget.laporan.status == "Dilihat";
+    final isInProgress = widget.laporan.status == "Diproses";
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -73,9 +91,9 @@ class _ActionDialogState extends State<ActionDialog>
           child: SlideTransition(
             position: _slideAnimation,
             child: Container(
-              padding: EdgeInsets.all(responsive.space(SizeScale.xxl)),
+              padding: EdgeInsets.all(responsive.space(SizeScale.md)),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
+                color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
@@ -88,116 +106,130 @@ class _ActionDialogState extends State<ActionDialog>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    spacing: responsive.space(SizeScale.md),
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(responsive.space(SizeScale.xs)),
-                        decoration: BoxDecoration(
-                          color: NotificationTypeUtils.getColor(
-                            widget.notification.type,
-                          ).withOpacity(0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: CustomIconButton(
-                          icon: NotificationTypeUtils.getIcon(
-                            widget.notification.type,
-                          ),
-                          iconSize: responsive.space(SizeScale.xxl),
-                          color: NotificationTypeUtils.getColor(
-                            widget.notification.type,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        NotificationTypeUtils.getSender(
-                          widget.notification.type,
-                        ),
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
+                  _buildDialogHeader(responsive, isProcessing),
+                  SizedBox(height: responsive.space(SizeScale.sm)),
 
-                  SizedBox(height: responsive.space(SizeScale.xs)),
                   Text(
-                    widget.notification.body,
+                    isProcessing
+                        ? "Laporan akan diproses dengan no registrasi ${widget.laporan.noRegistrasi}"
+                        : isInProgress
+                        ? "Pilih tindakan untuk laporan ${widget.laporan.noRegistrasi}"
+                        : "Konfirmasi tindakan",
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurface.withOpacity(0.8),
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: responsive.space(SizeScale.xxl)),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(
-                              vertical: responsive.space(SizeScale.md),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            side: BorderSide(
-                              color: NotificationTypeUtils.getColor(
-                                widget.notification.type,
-                              ),
-                            ),
-                          ),
-                          onPressed: () => Navigator.pop(context, false),
-                          child: Text(
-                            "Tutup",
-                            style: TextStyle(
-                              color: NotificationTypeUtils.getColor(
-                                widget.notification.type,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: responsive.space(SizeScale.md)),
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: NotificationTypeUtils.getColor(
-                              widget.notification.type,
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              vertical: responsive.space(SizeScale.md),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                          onPressed:
-                              () =>
-                                  widget.onPressed != null
-                                      ? widget.onPressed?.call()
-                                      : Navigator.pop(context, true),
-                          child: Text(
-                            "Lanjut",
-                            style: TextStyle(
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+
+                  SizedBox(height: responsive.space(SizeScale.lg)),
+
+                  // Tombol aksi dinamis
+                  _buildActionButtons(responsive, isProcessing, isInProgress),
                 ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDialogHeader(ResponsiveSizes responsive, bool isProcessing) {
+    final iconColor = isProcessing ? grenColor : redColor;
+    final title = isProcessing ? "Proses Laporan?" : "Tindakan Laporan";
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: EdgeInsets.all(responsive.space(SizeScale.xs)),
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.2),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            isProcessing ? Icons.autorenew : Icons.warning,
+            size: responsive.space(SizeScale.lg),
+            color: iconColor,
+          ),
+        ),
+        SizedBox(width: responsive.space(SizeScale.sm)),
+        Text(title, style: context.textStyle.onestBold(size: SizeScale.md)),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(
+    ResponsiveSizes responsive,
+    bool isProcessing,
+    bool isInProgress,
+  ) {
+    if (isProcessing) {
+      return Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              style: _outlinedButtonStyle(responsive, redColor),
+              onPressed: () => Navigator.pop(context),
+              child: Text("Batal", style: TextStyle(color: redColor)),
+            ),
+          ),
+          SizedBox(width: responsive.space(SizeScale.sm)),
+          Expanded(
+            child: ElevatedButton(
+              style: _elevatedButtonStyle(responsive, grenColor),
+              onPressed: () => _handleAction("Diproses"),
+              child: Text("Proses", style: TextStyle(color: Colors.white)),
+            ),
+          ),
+        ],
+      );
+    } else if (isInProgress) {
+      return Column(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: _elevatedButtonStyle(responsive, grenColor),
+              onPressed: () => _handleAction("Selesai"),
+              child: Text(
+                "Tandai Selesai",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
+          SizedBox(height: responsive.space(SizeScale.sm)),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              style: _outlinedButtonStyle(responsive, redColor),
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                "Batalkan Laporan",
+                style: TextStyle(color: redColor),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return const SizedBox();
+  }
+
+  ButtonStyle _elevatedButtonStyle(ResponsiveSizes responsive, Color color) {
+    return ElevatedButton.styleFrom(
+      backgroundColor: color,
+      padding: EdgeInsets.symmetric(vertical: responsive.space(SizeScale.md)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+    );
+  }
+
+  ButtonStyle _outlinedButtonStyle(ResponsiveSizes responsive, Color color) {
+    return OutlinedButton.styleFrom(
+      padding: EdgeInsets.symmetric(vertical: responsive.space(SizeScale.md)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      side: BorderSide(color: color),
     );
   }
 }

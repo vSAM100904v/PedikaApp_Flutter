@@ -15,6 +15,7 @@ import 'package:pa2_kelompok07/provider/notification_query_provider.dart';
 import 'package:pa2_kelompok07/provider/user_provider.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/Laporan/component/tracking_detail_page.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/Laporan/detail_report_screen.dart';
+import 'package:pa2_kelompok07/screens/laporan/component/tracking_detail_page.dart';
 import 'package:pa2_kelompok07/services/api_service.dart';
 import 'package:pa2_kelompok07/styles/color.dart';
 import 'package:provider/provider.dart';

@@ -1,33 +1,46 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:camera/camera.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:pa2_kelompok07/config.dart';
 import 'package:pa2_kelompok07/core/constant/seed.dart';
 import 'package:pa2_kelompok07/core/helpers/hooks/responsive_sizes.dart';
+import 'package:pa2_kelompok07/core/helpers/hooks/text_style.dart';
 import 'package:pa2_kelompok07/core/helpers/logger/logger.dart';
 import 'package:pa2_kelompok07/core/helpers/logger/text_logger.dart';
 import 'package:pa2_kelompok07/core/persentation/widgets/atoms/placeholder_component.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/dialogs/create_tracking_dialog.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/dialogs/delete_tracking_dialog.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/dialogs/update_tracking_dialog.dart';
 import 'package:pa2_kelompok07/core/persentation/widgets/tracking_card.dart';
+import 'package:pa2_kelompok07/model/report/tracking_report_model.dart';
 import 'package:pa2_kelompok07/provider/report_provider.dart';
 import 'package:pa2_kelompok07/styles/color.dart';
 import 'package:provider/provider.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
-class TrackingPage extends StatefulWidget {
+class TrackingPageAdmin extends StatefulWidget {
   final String noRegistrasi;
-
-  const TrackingPage({super.key, required this.noRegistrasi});
+  final bool isAdmin;
+  const TrackingPageAdmin({
+    super.key,
+    required this.noRegistrasi,
+    this.isAdmin = false,
+  });
 
   @override
-  State<TrackingPage> createState() => _TrackingPageState();
+  State<TrackingPageAdmin> createState() => _TrackingPageAdminState();
 }
 
-class _TrackingPageState extends State<TrackingPage> with TextLogger {
+class _TrackingPageAdminState extends State<TrackingPageAdmin>
+    with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
@@ -35,51 +48,85 @@ class _TrackingPageState extends State<TrackingPage> with TextLogger {
       Provider.of<ReportProvider>(
         context,
         listen: false,
-      ).fetchDetailReports(widget.noRegistrasi);
+      ).fetchDetailReports(widget.noRegistrasi, isAdmin: widget.isAdmin);
     });
+  }
+
+  void _showCreateDialog() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => CreateTrackingDialog(noRegistrasi: widget.noRegistrasi),
+    );
+  }
+
+  void _showUpdateDialog(TrackingLaporanModel tracking) {
+    showDialog(
+      context: context,
+      builder: (context) => UpdateTrackingDialog(tracking: tracking),
+    );
+  }
+
+  void _showDeleteDialog(int id) {
+    showDialog(
+      context: context,
+      builder: (context) => DeleteTrackingDialog(id: id),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final responsive = context.responsive;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Tracking Page",
-          style: TextStyle(color: Colors.white),
+          style: context.textStyle.onestBold(
+            size: SizeScale.lg,
+            color: Colors.white,
+          ),
         ),
         backgroundColor: AppColor.primaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions:
+            widget.isAdmin
+                ? [
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: _showCreateDialog,
+                  ),
+                ]
+                : null,
       ),
       body: Consumer<ReportProvider>(
         builder: (context, reportProvider, child) {
           if (reportProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
-          } else if (reportProvider.errorMessage != null) {
-            return const PlaceHolderComponent(state: PlaceHolderState.error);
           } else if (reportProvider.detailReport != null) {
             final detail = reportProvider.detailReport!.data.trackingLaporan;
-            debugLog(
-              "detailReport.toString(): ${reportProvider.detailReport!.data.trackingLaporan}",
-            );
 
             if (detail.isEmpty) {
-              return const PlaceHolderComponent(
-                state: PlaceHolderState.emptyTracking,
+              return const Center(
+                child: PlaceHolderComponent(
+                  state: PlaceHolderState.emptyTracking,
+                ),
               );
             }
             return ListView.builder(
-              padding: EdgeInsets.only(
-                top: context.responsive.space(SizeScale.md),
-              ),
+              padding: EdgeInsets.only(top: responsive.space(SizeScale.md)),
               itemCount: detail.length,
               itemBuilder: (context, index) {
                 final isLatest = index == 0;
-                return TrackingCard(
+                return TrackingCardAdmin(
                   tracking: detail[index],
                   isLatest: isLatest,
-                  onTap: () {
-                    // Handle card tap if needed
-                  },
+                  position: detail.length - index,
+                  totalSteps: detail.length,
+                  isAdmin: widget.isAdmin,
+                  onTap: () {},
+                  onUpdate: () => _showUpdateDialog(detail[index]),
+                  onDelete: () => _showDeleteDialog(detail[index].id),
                 );
               },
             );

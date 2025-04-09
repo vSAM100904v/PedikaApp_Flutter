@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:pa2_kelompok07/core/services/notification_service.dart';
 import 'package:pa2_kelompok07/provider/notification_query_provider.dart';
+import 'package:pa2_kelompok07/screens/admin/layouts/admin_layout.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/Laporan/detail_report_screen.dart';
+import 'package:pa2_kelompok07/screens/admin/pages/dashboard_page/reports_page.dart.dart';
 import 'package:provider/provider.dart';
 import 'package:pa2_kelompok07/navigationBar/bottom_bar.dart';
 import 'package:pa2_kelompok07/provider/appointment_provider.dart';
@@ -45,8 +47,6 @@ void main() async {
   await userProvider.loadUserToken();
 
   // Tambahkan proses untuk mengambil token admin
-  final adminProvider = AdminProvider();
-  await adminProvider.loadAdminToken();
 
   await initializeDateFormatting('id_ID', null);
 
@@ -61,7 +61,12 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AppointmentProvider()),
         ChangeNotifierProvider(create: (_) => NotificationQueryProvider()),
         // Provider baru untuk admin
-        ChangeNotifierProvider(create: (_) => adminProvider),
+        ChangeNotifierProvider(
+          create:
+              (context) => AdminProvider(
+                Provider.of<UserProvider>(context, listen: false),
+              ),
+        ),
         Provider(create: (_) => NotificationService.instance),
       ],
       child: const MyApp(),
@@ -101,6 +106,7 @@ class MyApp extends StatelessWidget {
         '/prosedur-janji-temu': (context) => const AppointmentProcedure(),
         '/notifikasi': (context) => const NotificationScreen(),
         '/admin-dashboard': (context) => const Beranda(),
+        '/admin-layout': (context) => const AdminLayout(),
         '/detail-laporan': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as String;
           return DetailReportScreen(noRegistrasi: args);

@@ -11,9 +11,9 @@ import 'package:pa2_kelompok07/core/constant/constant.dart';
 import 'package:pa2_kelompok07/core/helpers/logger/logger.dart';
 import 'package:pa2_kelompok07/core/models/notification_channel_model.dart';
 import 'package:pa2_kelompok07/main.dart';
-import 'package:pa2_kelompok07/screens/admin/pages/Laporan/component/tracking_detail_page.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/Laporan/detail_report_screen.dart';
 import 'package:pa2_kelompok07/screens/appointment/appointment_screen.dart';
+import 'package:pa2_kelompok07/screens/laporan/component/tracking_detail_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 @pragma('vm:entry-point')

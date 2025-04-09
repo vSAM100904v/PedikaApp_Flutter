@@ -37,8 +37,10 @@ class UserProvider with ChangeNotifier {
   Future<void> _initialize() async {
     await loadUserToken();
     if (isLoggedIn) {
-      await _checkAndUpdateTokenOnLogin();
-      await fetchUnreadCount();
+      if (_user?.role != "admin") {
+        await _checkAndUpdateTokenOnLogin();
+        await fetchUnreadCount();
+      }
     }
   }
 
@@ -52,20 +54,24 @@ class UserProvider with ChangeNotifier {
       final response = await APIService().login(identifier, password);
       _user = response.data;
       _userToken = response.token;
+      _logger.log("INI ADALAH LOG DARI USER TOKEN $_userToken");
       await setUserToken(_userToken!);
       await setUserDetails(_user!);
-      notifyListeners();
-      await _checkAndUpdateTokenOnLogin();
 
-      final pendingNotification =
-          await NotificationService.instance.getPendingNotification();
-      if (pendingNotification != null) {
-        NotificationService.instance.navigateBasedOnNotification(
-          pendingNotification,
-        );
-        await NotificationService.instance.clearPendingNotification();
+      if (response.data.role != null && response.data.role != "admin") {
+        await _checkAndUpdateTokenOnLogin();
+
+        final pendingNotification =
+            await NotificationService.instance.getPendingNotification();
+        if (pendingNotification != null) {
+          NotificationService.instance.navigateBasedOnNotification(
+            pendingNotification,
+          );
+          await NotificationService.instance.clearPendingNotification();
+        }
       }
 
+      notifyListeners();
       return true;
     } catch (e) {
       _logger.log('Error login: $e');
@@ -173,7 +179,10 @@ class UserProvider with ChangeNotifier {
   }
 
   Future<void> _checkAndUpdateTokenOnLogin() async {
-    if (!isLoggedIn || userId == null || _isTokenBeingHandled) {
+    if (!isLoggedIn ||
+        userId == null ||
+        _isTokenBeingHandled ||
+        _user?.role == "admin") {
       _logger.log(
         _isTokenBeingHandled
             ? "Token already being handled"
@@ -185,7 +194,7 @@ class UserProvider with ChangeNotifier {
     try {
       final storedToken = await _storage.read(key: 'fcm_token');
       if (storedToken != null) {
-        await APIService().sendTokenToServer(storedToken, _userToken!);
+        await APIService().sendTokenToServer(storedToken);
         await _updateUserNotificationToken();
         await setUserDetails(_user!);
       }
@@ -199,13 +208,16 @@ class UserProvider with ChangeNotifier {
   Future<void> updateFcmToken(String newToken) async {
     await _storage.write(key: 'fcm_token', value: newToken);
 
-    await APIService().sendTokenToServer(newToken, _userToken!);
+    await APIService().sendTokenToServer(newToken);
     notifyListeners();
   }
 
   Future<void> fetchUnreadCount() async {
     try {
-      if (!isLoggedIn || userId == null || _isTokenBeingHandled) {
+      if (!isLoggedIn ||
+          userId == null ||
+          _isTokenBeingHandled ||
+          _user?.role == "admin") {
         _logger.log(
           _isTokenBeingHandled
               ? "Notificaition count alread retrieved"

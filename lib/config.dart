@@ -20,7 +20,7 @@ class Config {
   static const String userProfileAPI = "/api/masyarakat/profile";
 
   // Tambahkan endpoint untuk admin (mengambil seluruh laporan)
-  static const String GetLatestReports = "/api/admin/laporans";
+  static const String GetLatestReports = "/api/admin/laporans-pagination";
 
   // Form DPMADPPA
   static const String getFormAPIDPMADPPA =
@@ -69,4 +69,20 @@ class Config {
   static const String markNotificationAsRead =
       "/api/masyarakat/read-notification";
   static const String fallbackImage = "https://picsum.photos/200/300";
+
+  // ADMINNN ROUTERR
+  static const String getSpecifiReportAdminRouter = "/api/admin/detail-laporan";
+  static const String updateStatusReportAsReadAdminRouter =
+      "/api/admin/lihat-laporan";
+  static const String updateStatusReportAsProcessAdminRouter =
+      "/api/admin/proses-laporan";
+  static const String updateStatusReportAsDoneAdminRouter =
+      "/api/admin/proses-laporan";
+  static const String getDetailReportByAdmin = "/api/admin/detail-laporan";
+  static const String createTrackingReportAdminRouter =
+      "/api/admin/create-tracking-laporan";
+  static const String deleteTrackingReportAdminRouter =
+      "/api/admin/delete-tracking-laporan";
+  static const String updateTrackingReportAdminRouter =
+      "/api/admin/edit-tracking-laporan";
 }

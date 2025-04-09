@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pa2_kelompok07/provider/user_provider.dart';
+import 'package:provider/provider.dart';
 import '../pages/beranda/admin_dashboard.dart';
 import '../pages/Donasi/donasi.dart';
 import '../pages/event/event.dart';
@@ -174,6 +176,11 @@ class AppSidebar extends StatelessWidget {
                         ),
                         ElevatedButton(
                           onPressed: () {
+                            final userProvider = Provider.of<UserProvider>(
+                              context,
+                              listen: false,
+                            );
+                            userProvider.logout();
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Berhasil keluar')),

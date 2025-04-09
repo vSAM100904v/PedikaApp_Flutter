@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io' as io;
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -29,7 +30,17 @@ import 'package:path/path.dart';
 
 class APIService {
   static var client = http.Client();
-  final Logger _logger = Logger("API Service");
+  static final Logger _logger = Logger("API Service");
+
+  static const APIService instance = APIService();
+  const APIService();
+  Map<String, String> _getHeaders(String accessToken) {
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $accessToken',
+    };
+  }
+
   Future<ResponseModel> fetchAllReports() async {
     const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'userToken');
@@ -432,27 +443,39 @@ class APIService {
     }
   }
 
-  Future<DetailResponseModel> getFullReportDetails(String noRegistrasi) async {
-    const storage = FlutterSecureStorage();
-    final token = await storage.read(key: 'userToken');
-    final url = Uri.parse(
-      '${Config.apiUrl}${Config.getDetailReportByUser}/$noRegistrasi',
-    );
-    final response = await http.get(
-      url,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-    );
-
-    if (response.statusCode == 200) {
-      _logger.log(
-        'jsonDecode(response.body.toString()): ${jsonDecode(response.body.toString())}',
+  Future<DetailResponseModel> getFullReportDetails(
+    String noRegistrasi,
+    bool isAdmin,
+  ) async {
+    try {
+      const storage = FlutterSecureStorage();
+      final token = await storage.read(key: 'userToken');
+      final url = Uri.parse(
+        isAdmin
+            ? '${Config.apiUrl}${Config.getDetailReportByAdmin}/$noRegistrasi'
+            : '${Config.apiUrl}${Config.getDetailReportByUser}/$noRegistrasi',
       );
-      return DetailResponseModel.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Failed to load report details');
+
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        _logger.log(
+          'jsonDecode(response.body.toString()): ${jsonDecode(response.body.toString())}',
+        );
+        _logger.log("SUDAHH SUCKSESSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS");
+        return DetailResponseModel.fromJson(jsonDecode(response.body));
+      } else {
+        throw Exception('Failed to load report details ${response.body}');
+      }
+    } catch (e) {
+      _logger.log('Error: $e');
+      throw Exception('Failed to load report details ${e.toString()}');
     }
   }
 
@@ -751,10 +774,8 @@ class APIService {
     }
   }
 
-  Future<void> sendTokenToServer(
-    String notificationToken,
-    String authorizationToken,
-  ) async {
+  Future<void> sendTokenToServer(String notificationToken) async {
+    String? authorizationToken = await storage.read(key: 'userToken');
     try {
       _logger.log(
         'Attempting to send FCM token to server with Params FCM TOKEN:$notificationToken, Bearer Token:$authorizationToken',
@@ -771,7 +792,7 @@ class APIService {
           HttpHeaders.authorizationHeader: 'Bearer $authorizationToken',
         },
       );
-
+      _logger.log("INI ADALAH RESPONSE ${response.body}");
       if (response.statusCode == 200) {
         _logger.log('FCM token successfully sent to server');
       } else {
@@ -902,6 +923,334 @@ class APIService {
       );
       Navigator.of(ctx).pushNamedAndRemoveUntil('/login', (route) => false);
       await Provider.of<UserProvider>(ctx, listen: false).logout();
+    }
+  }
+
+  // Admin Router
+
+  Future<Map<String, dynamic>> retrieveAvailableReportsAdminService(
+    String accessToken,
+    int page,
+    int limit,
+  ) async {
+    try {
+      // Menambahkan query parameter ke URL
+      final url = Uri.parse(
+        "${Config.apiUrl}${Config.GetLatestReports}",
+      ).replace(
+        queryParameters: {'page': page.toString(), 'limit': limit.toString()},
+      );
+
+      final response = await client.get(
+        url,
+        headers: {
+          HttpHeaders.contentTypeHeader: 'application/json',
+          HttpHeaders.authorizationHeader: 'Bearer $accessToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        // Sekarang response akan berisi data dan meta
+        _logger.log(
+          "This Result From Data ${data['data']}",
+        ); // Mengubah 'Data' menjadi 'data'
+        _logger.log("Pagination Info: ${data['meta']}");
+        final reportsData = data['data'] as List? ?? [];
+        final reports =
+            reportsData
+                .map(
+                  (reportJson) => ListLaporanModel.fromJson(
+                    reportJson as Map<String, dynamic>,
+                  ),
+                )
+                .toList();
+        final payload = {
+          'reports': reports,
+          'page': data['meta']["page"] as int,
+          'totalPages': data['meta']["totalPage"] as int,
+          'limit': data['meta']["limit"] as int,
+        };
+
+        _logger.log("INI DATA YANG DI PAYLOAD ${payload['reports']}");
+        return payload;
+      } else {
+        throw Exception('Failed to load notifications: ${response.body} ');
+      }
+    } catch (e) {
+      _logger.log('Error Pagination: $e');
+      throw Exception('Failed to Pagination reports Admin: ${e.toString()}');
+    }
+  }
+
+  Future<void> updateStatusReportAsReadAdminService({
+    required String accessToken,
+    required String noRegistrasi,
+  }) async {
+    try {
+      final url = Uri.parse(
+        '${Config.apiUrl}${Config.updateStatusReportAsReadAdminRouter}/$noRegistrasi',
+      );
+      final response = await client.put(url, headers: _getHeaders(accessToken));
+
+      // Log seluruh response body
+      _logger.log('View Report Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Log hanya data
+        _logger.log('View Report Data: ${data['data']}');
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Invalid or missing token');
+      } else if (response.statusCode == 404) {
+        throw Exception('Report not found');
+      } else {
+        throw Exception('Failed to view report: ${response.body}');
+      }
+    } catch (e) {
+      _logger.log('Error viewing report: $e');
+      rethrow;
+    }
+  }
+
+  // Method untuk AdminProsesLaporan
+  Future<void> updateStatusReportAsProcessAdminService({
+    required String accessToken,
+    required String noRegistrasi,
+    required BuildContext innerContext,
+  }) async {
+    try {
+      final url = Uri.parse(
+        '${Config.apiUrl}${Config.updateStatusReportAsProcessAdminRouter}/$noRegistrasi',
+      );
+      final response = await client.put(url, headers: _getHeaders(accessToken));
+
+      // Log seluruh response body
+      _logger.log('Process Report Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Log hanya data
+        _logger.log('Process Report Data: ${data['data']}');
+        innerContext.toast.showSuccess("Status berhasil diubah ");
+      } else if (response.statusCode == 404) {
+        throw Exception('Report not found');
+      } else if (response.statusCode == 500) {
+        final data = jsonDecode(response.body);
+        throw Exception('Failed to process report: ${data['message']}');
+      } else {
+        throw Exception('Failed to process report: ${response.body}');
+      }
+    } catch (e) {
+      innerContext.toast.showSuccess("Status Gagal dirubah $e");
+      _logger.log('Error processing report: $e');
+      rethrow;
+    }
+  }
+
+  // Method untuk SelesaikanLaporan
+  Future<void> updateStatusReportAsDoneAdminService({
+    required String accessToken,
+    required String noRegistrasi,
+    required BuildContext innerContext,
+  }) async {
+    try {
+      final url = Uri.parse(
+        '${Config.apiUrl}${Config.updateStatusReportAsDoneAdminRouter}/$noRegistrasi',
+      );
+      final response = await client.put(url, headers: _getHeaders(accessToken));
+
+      // Log seluruh response body
+      _logger.log('Complete Report Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Log hanya data
+        _logger.log('Complete Report Data: ${data['data']}');
+        innerContext.toast.showSuccess("Status berhasil diubah ");
+      } else if (response.statusCode == 404) {
+        throw Exception('Report not found');
+      } else if (response.statusCode == 500) {
+        final data = jsonDecode(response.body);
+
+        throw Exception('Failed to complete report: ${data['message']}');
+      } else {
+        throw Exception('Failed to complete report: ${response.body}');
+      }
+    } catch (e) {
+      _logger.log('Error completing report: $e');
+      innerContext.toast.showSuccess("Status Gagal dirubah $e");
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> createTrackingLaporan({
+    required String noRegistrasi,
+    required String keterangan,
+    List<File>? documents,
+  }) async {
+    try {
+      String? authorizationToken = await storage.read(key: 'userToken');
+      final url = Uri.parse(
+        "${Config.apiUrl}${Config.createTrackingReportAdminRouter}",
+      );
+      var request =
+          http.MultipartRequest('POST', url)
+            ..headers.addAll({
+              'Content-Type': 'multipart/form-data',
+              'Authorization': 'Bearer $authorizationToken',
+            })
+            ..fields['no_registrasi'] = noRegistrasi
+            ..fields['keterangan'] = keterangan;
+
+      // Tambahkan dokumen jika ada
+      if (documents != null && documents.isNotEmpty) {
+        for (var file in documents) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'document',
+              file.path,
+              contentType: DioMediaType('application', 'octet-stream'),
+            ),
+          );
+        }
+      }
+
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+      final decodedResponse = jsonDecode(responseBody);
+
+      _logger.log('CreateTrackingLaporan Response Body: $responseBody');
+      if (decodedResponse['Data'] != null) {
+        _logger.log('CreateTrackingLaporan Data: ${decodedResponse['Data']}');
+      }
+
+      if (response.statusCode == 201) {
+        return decodedResponse; // Kembalikan seluruh respons
+      } else if (response.statusCode == 400) {
+        throw Exception('Bad Request: ${decodedResponse['message']}');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: ${decodedResponse['message']}');
+      } else {
+        throw Exception(
+          'Unexpected error: ${response.statusCode} - ${decodedResponse['message']}',
+        );
+      }
+    } catch (e) {
+      _logger.log('Error in CreateTrackingLaporan: $e');
+      rethrow;
+    }
+  }
+
+  // Method untuk Update Tracking Laporan
+  Future<Map<String, dynamic>> updateTrackingLaporan({
+    required String id,
+    String? noRegistrasi, // Opsional
+    String? keterangan, // Opsional
+    List<File>? documents, // Opsional untuk upload file
+  }) async {
+    try {
+      String? authorizationToken = await storage.read(key: 'userToken');
+      final url = Uri.parse(
+        "${Config.apiUrl}${Config.updateTrackingReportAdminRouter}/$id",
+      );
+      var request = http.MultipartRequest('PUT', url)
+        ..headers.addAll({
+          'Content-Type': 'multipart/form-data',
+          'Authorization': 'Bearer $authorizationToken',
+        });
+
+      // Tambahkan fields yang opsional jika ada
+      if (noRegistrasi != null) {
+        request.fields['no_registrasi'] = noRegistrasi;
+      }
+      if (keterangan != null) {
+        request.fields['keterangan'] = keterangan;
+      }
+
+      // Tambahkan dokumen jika ada
+      if (documents != null && documents.isNotEmpty) {
+        for (var file in documents) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'document',
+              file.path,
+              contentType: DioMediaType('application', 'octet-stream'),
+            ),
+          );
+        }
+      }
+
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+      final decodedResponse = jsonDecode(responseBody);
+
+      // Logging response body dan data
+      _logger.log('UpdateTrackingLaporan Response Body: $responseBody');
+      if (decodedResponse['data'] != null) {
+        _logger.log('UpdateTrackingLaporan Data: ${decodedResponse['data']}');
+      }
+
+      if (response.statusCode == 200) {
+        return decodedResponse;
+      } else if (response.statusCode == 400) {
+        throw Exception('Bad Request: ${decodedResponse['message']}');
+      } else if (response.statusCode == 404) {
+        throw Exception('Not Found: ${decodedResponse['message']}');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: ${decodedResponse['message']}');
+      } else {
+        throw Exception(
+          'Unexpected error: ${response.statusCode} - ${decodedResponse['message']}',
+        );
+      }
+    } catch (e) {
+      _logger.log('Error in UpdateTrackingLaporan: $e');
+      rethrow;
+    }
+  }
+
+  // Method untuk Delete Tracking Laporan
+  Future<Map<String, dynamic>> deleteTrackingLaporan({
+    required String id,
+  }) async {
+    try {
+      String? authorizationToken = await storage.read(key: 'userToken');
+      final url = Uri.parse(
+        "${Config.apiUrl}${Config.deleteTrackingReportAdminRouter}/$id",
+      );
+      final response = await client.delete(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authorizationToken',
+        },
+      );
+
+      final responseBody = response.body;
+      final decodedResponse = jsonDecode(responseBody);
+
+      // Logging response body
+      _logger.log('DeleteTrackingLaporan Response Body: $responseBody');
+      // Tidak ada 'data' pada response delete, jadi tidak perlu log 'data'
+
+      if (response.statusCode == 200) {
+        return decodedResponse;
+      } else if (response.statusCode == 400) {
+        throw Exception('Bad Request: ${decodedResponse['message']}');
+      } else if (response.statusCode == 404) {
+        throw Exception('Not Found: ${decodedResponse['message']}');
+      } else if (response.statusCode == 500) {
+        throw Exception('Server Error: ${decodedResponse['message']}');
+      } else {
+        throw Exception(
+          'Unexpected error: ${response.statusCode} - ${decodedResponse['message']}',
+        );
+      }
+    } catch (e) {
+      _logger.log('Error in DeleteTrackingLaporan: $e');
+      rethrow;
     }
   }
 }

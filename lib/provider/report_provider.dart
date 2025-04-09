@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:pa2_kelompok07/core/helpers/logger/logger.dart';
 import 'package:pa2_kelompok07/model/report/list_report_model.dart';
+import 'package:pa2_kelompok07/model/report/tracking_report_model.dart';
+import 'package:pa2_kelompok07/provider/admin_provider.dart';
+import 'package:pa2_kelompok07/provider/user_provider.dart';
 import '../model/report/full_report_model.dart';
 import '../services/api_service.dart';
 
@@ -9,8 +14,15 @@ class ReportProvider with ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
   final Logger _logger = Logger("Report Provider");
+
   DetailResponseModel? detailReport;
 
+  /// Fetches reports for the currently logged-in user.
+  ///
+  /// This function first sets `isLoading` to `true`, then attempts to fetch
+  /// the reports. If the request is successful, `isLoading` is set to `false`
+  /// and the response is stored in `reports`. If an error occurs, `isLoading`
+  /// is also set to `false` and the error is stored in `errorMessage`.
   Future<void> fetchReports() async {
     _setLoading(true);
     try {
@@ -21,11 +33,150 @@ class ReportProvider with ChangeNotifier {
     }
   }
 
-  Future<void> fetchDetailReports(String noRegistrasi) async {
+  Future<void> createTracking({
+    required String noRegistrasi,
+    required String keterangan,
+    List<File>? documents,
+  }) async {
+    _setLoading(true);
+    notifyListeners();
+    try {
+      final response = await APIService().createTrackingLaporan(
+        noRegistrasi: noRegistrasi,
+        keterangan: keterangan,
+        documents: documents,
+      );
+
+      // Parsing data dari response['Data']
+      final trackingData = response['Data'];
+      if (trackingData == null) {
+        throw Exception("No 'Data' field in response");
+      }
+
+      final newTracking = TrackingLaporanModel(
+        id: trackingData['id'] as int, // Ambil id dari Data
+        noRegistrasi: trackingData['no_registrasi'] as String,
+        keterangan: trackingData['keterangan'] as String,
+        documents:
+            trackingData['document'] != null &&
+                    trackingData['document']['urls'] != null
+                ? List<String>.from(trackingData['document']['urls'])
+                : documents?.map((file) => file.path).toList() ?? [],
+        createdAt: DateTime.parse(
+          trackingData['created_at'] ?? DateTime.now().toIso8601String(),
+        ),
+        updatedAt: DateTime.parse(
+          trackingData['updated_at'] ?? DateTime.now().toIso8601String(),
+        ),
+      );
+
+      if (detailReport != null) {
+        _logger.log(
+          "Before adding new tracking: ${detailReport!.data.trackingLaporan.length} items",
+        );
+        detailReport!.data.trackingLaporan.insert(0, newTracking);
+        _logger.log(
+          "After adding new tracking: ${detailReport!.data.trackingLaporan.length} items",
+        );
+        _logger.log("New tracking added: ${newTracking.toJson()}");
+      } else {
+        // Jika detailReport null, fetch data dulu
+        _logger.log("detailReport is null, fetching report details...");
+        detailReport = await APIService().getFullReportDetails(
+          noRegistrasi,
+          false,
+        );
+        if (detailReport != null) {
+          detailReport!.data.trackingLaporan.insert(0, newTracking);
+          _logger.log(
+            "Fetched and added new tracking: ${detailReport!.data.trackingLaporan.length} items",
+          );
+        } else {
+          throw Exception(
+            "Failed to fetch report details, cannot create tracking",
+          );
+        }
+      }
+    } catch (e) {
+      _logger.log("Error in createTracking: $e");
+      _handleError(e);
+    } finally {
+      _setLoading(false);
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateTracking({
+    required String id,
+    String? keterangan,
+    List<File>? documents,
+  }) async {
+    _setLoading(true);
+    notifyListeners();
+    try {
+      final response = await APIService().updateTrackingLaporan(
+        // accessToken: _userProvider.userToken,
+        id: id,
+        keterangan: keterangan,
+        documents: documents,
+      );
+
+      if (detailReport != null) {
+        final index = detailReport!.data.trackingLaporan.indexWhere(
+          (t) => t.id.toString() == id,
+        );
+        if (index != -1) {
+          final existing = detailReport!.data.trackingLaporan[index];
+          detailReport!.data.trackingLaporan[index] = TrackingLaporanModel(
+            id: existing.id,
+            noRegistrasi: existing.noRegistrasi,
+            keterangan: keterangan ?? existing.keterangan,
+            documents:
+                documents?.map((file) => file.path).toList() ??
+                existing.documents,
+            createdAt: existing.createdAt,
+            updatedAt: DateTime.now(),
+          );
+        }
+      }
+    } catch (e) {
+      _handleError(e);
+    } finally {
+      _setLoading(false);
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteTracking(String id) async {
+    _setLoading(true);
+    notifyListeners();
+    try {
+      await APIService().deleteTrackingLaporan(id: id);
+
+      if (detailReport != null) {
+        detailReport!.data.trackingLaporan.removeWhere(
+          (t) => t.id.toString() == id,
+        );
+      }
+    } catch (e) {
+      _handleError(e);
+    } finally {
+      _setLoading(false);
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchDetailReports(
+    String noRegistrasi, {
+    bool isAdmin = false,
+  }) async {
     notifyListeners();
     _setLoading(true);
     try {
-      detailReport = await APIService().getFullReportDetails(noRegistrasi);
+      detailReport = await APIService().getFullReportDetails(
+        noRegistrasi,
+        isAdmin,
+      );
 
       _setLoading(false);
     } catch (e) {
@@ -34,85 +185,6 @@ class ReportProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-
-  // Future<void> fetchReportsByLaporanMasuk() async {
-  //   _setLoading(true);
-  //   try {
-  //     var allReports = await APIService().fetchUserReports();
-  //     if (allReports != null && allReports.data != null) {
-  //       var filteredReports =
-  //           allReports.data!
-  //               .where((report) => report.status == "Laporan masuk")
-  //               .toList();
-  //       reports = ResponseModel(
-  //         code: allReports.code,
-  //         status: allReports.status,
-  //         message: "Filtered by Laporan masuk",
-  //         data: filteredReports,
-  //       );
-  //     }
-  //     _setLoading(false);
-  //   } catch (e) {
-  //     _handleError(e);
-  //   }
-  // }
-
-  // Future<void> fetchReportsByLaporanProses() async {
-  //   isLoading = true;
-  //   notifyListeners();
-  //   try {
-  //     var allReports = await APIService().fetchUserReports();
-  //     var filteredReports =
-  //         allReports.data
-  //             .where((report) => report.status == "Diproses")
-  //             .toList();
-  //     reports = ResponseModel(
-  //       code: allReports.code,
-  //       status: allReports.status,
-  //       message: allReports.message,
-  //       data: filteredReports,
-  //     );
-  //   } catch (e) {
-  //     print(e);
-  //   } finally {
-  //     isLoading = false;
-  //     notifyListeners();
-  //   }
-  // }
-
-  // Future<void> fetchReportsByLaporanSelesai() async {
-  //   isLoading = true;
-  //   notifyListeners();
-  //   try {
-  //     var allReports = await APIService().fetchUserReports();
-  //     var filteredReports =
-  //         allReports.data
-  //             .where((report) => report.status == "Selesai")
-  //             .toList();
-  //     reports = ResponseModel(
-  //       code: allReports.code,
-  //       status: allReports.status,
-  //       message: allReports.message,
-  //       data: filteredReports,
-  //     );
-  //   } catch (e) {
-  //     print(e);
-  //   } finally {
-  //     isLoading = false;
-  //     notifyListeners();
-  //   }
-  // }
-
-  // Metode untuk admin: mengambil semua laporan tanpa filter
-  // Future<void> fetchAllReports() async {
-  //   _setLoading(true);
-  //   try {
-  //     reports = await APIService().fetchAllReports();
-  //     _setLoading(false);
-  //   } catch (e) {
-  //     _handleError(e);
-  //   }
-  // }
 
   void _setLoading(bool loading) {
     isLoading = loading;

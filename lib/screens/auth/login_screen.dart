@@ -279,13 +279,16 @@ class _LoginPageState extends State<LoginPage> with TextLogger {
                                         debugLog("Debug print Succes");
                                         if (loginSuccess) {
                                           // Jika login berhasil, cek role user
+                                          debugLog(
+                                            "INIII ROLEEE USERRRRR ${userProvider.user!.role}",
+                                          );
                                           if (userProvider.user != null &&
                                               userProvider.user!.role ==
                                                   'admin') {
                                             Navigator.of(
                                               context,
                                             ).pushNamedAndRemoveUntil(
-                                              '/admin-dashboard',
+                                              '/admin-layout',
                                               (Route<dynamic> route) => false,
                                             );
                                           } else {
