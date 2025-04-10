@@ -13,7 +13,10 @@ import 'package:pa2_kelompok07/core/persentation/widgets/atoms/admin_header.dart
 import 'package:pa2_kelompok07/core/persentation/widgets/atoms/placeholder_component.dart';
 import 'package:pa2_kelompok07/core/persentation/widgets/cards/report_admin_card.dart';
 import 'package:pa2_kelompok07/core/persentation/widgets/dialogs/action_dialog.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/dialogs/donwloaded_pdf_dialog.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/dialogs/filter_reports_dialog.dart';
 import 'package:pa2_kelompok07/core/persentation/widgets/modals/report_detail_modal.dart';
+import 'package:pa2_kelompok07/core/services/pdf_service.dart';
 import 'package:pa2_kelompok07/main.dart';
 
 import 'package:pa2_kelompok07/model/report/list_report_model.dart';
@@ -33,435 +36,6 @@ class DashboardViewReportPage extends StatefulWidget {
       _DashboardViewReportPageState();
 }
 
-// class _DashboardViewReportPageState extends State<DashboardViewReportPage>
-//     with SingleTickerProviderStateMixin, TextLogger {
-//   late final UserProvider _userProvider;
-//   int _currentPage = 1;
-//   final int _itemsPerPage = 5;
-//   static const _pageSize = 10;
-//   final controller = ScrollController();
-//   double offset = 0;
-//   late AnimationController _animationController;
-//   late Animation<double> _fadeAnimation;
-//   TextEditingController searchController = TextEditingController();
-//   int selectIndex = 0;
-//   String searchQuery = '';
-//   // Sample data for the table
-
-//   late final PagingController<int, ListLaporanModel> _pagingController;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _animationController = AnimationController(
-//       vsync: this,
-//       duration: const Duration(milliseconds: 800),
-//     );
-//     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-//       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-//     );
-//     _animationController.forward();
-//     _userProvider = Provider.of<UserProvider>(context, listen: false);
-
-//     _pagingController = PagingController<int, ListLaporanModel>(
-//       getNextPageKey: (state) {
-//         final keys = state.keys;
-//         final pages = state.pages;
-//         if (keys == null) return 1;
-//         if (pages != null && pages.last.length < _pageSize) {
-//           return null; // Tidak ada halaman berikutnya jika jumlah item kurang dari limit
-//         }
-//         return keys.last + 1;
-//       },
-//       fetchPage: (pageKey) async {
-//         try {
-//           final result = await APIService()
-//               .retrieveAvailableReportsAdminService(
-//                 _userProvider.userToken!,
-//                 pageKey,
-//                 _pageSize,
-//               );
-//           final reports = result['reports'] as List<ListLaporanModel>;
-//           // final totalPages = result['totalPages'] as bool;
-//           // final limit = result['limit'] as int;
-//           // final page = result['page'] as int;
-
-//           return reports; // Mengembalikan daftar laporan
-//         } catch (e) {
-//           debugLog('Error fetching page $pageKey: $e');
-//           rethrow;
-//         }
-//       },
-//     );
-
-//     _pagingController.addListener(_showError);
-//   }
-
-//   Future<void> _showError() async {
-//     if (_pagingController.value.status == PagingStatus.subsequentPageError) {
-//       context.toast.showError("Gagal memuat notifikasi tambahan");
-//     }
-//   }
-
-//   @override
-//   void dispose() {
-//     _animationController.dispose();
-//     super.dispose();
-//   }
-
-//   void updateSearchQuery(String query) {
-//     setState(() {
-//       searchQuery = query;
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final responsive = context.responsive;
-
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text("PendikaApp"),
-//         leading: IconButton(icon: const Icon(Icons.menu), onPressed: () {}),
-//         actions: [
-//           IconButton(
-//             icon: const CircleAvatar(
-//               backgroundColor: Colors.grey,
-//               child: Icon(Icons.person, color: Colors.white),
-//             ),
-//             onPressed: () {},
-//           ),
-//         ],
-//       ),
-//       backgroundColor: AppColors.white,
-//       body: SingleChildScrollView(
-//         child: Padding(
-//           padding: const EdgeInsets.symmetric(horizontal: 20.0),
-//           child: Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               // Header with Cached Network Image
-//               _headerView(responsive),
-
-//               SizedBox(height: responsive.space(SizeScale.md)),
-
-//               Row(
-//                 children: [
-//                   Expanded(
-//                     child: SizedBox(
-//                       height:
-//                           context.responsive.space(SizeScale.xxxl) +
-//                           context.responsive.space(SizeScale.xl),
-//                       child: TextField(
-//                         controller: searchController,
-//                         decoration: InputDecoration(
-//                           contentPadding: const EdgeInsets.all(0),
-//                           prefixIcon: const Icon(Icons.search_outlined),
-//                           hintText: "Type Something",
-//                           fillColor: Color(0xFFF7F7F7),
-//                           filled: true,
-//                           border: InputBorder.none,
-//                           enabledBorder: OutlineInputBorder(
-//                             borderRadius: BorderRadius.circular(12),
-//                             borderSide: BorderSide(color: Colors.grey.shade800),
-//                           ),
-//                           focusedBorder: OutlineInputBorder(
-//                             borderRadius: BorderRadius.circular(12),
-//                             borderSide: const BorderSide(
-//                               color: AppColors.black,
-//                             ),
-//                           ),
-//                         ),
-//                         onChanged: updateSearchQuery,
-//                       ),
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//               _searchBar(responsive),
-
-//               // Table Title
-//               _taglineHeader(context),
-//               SizedBox(height: responsive.space(SizeScale.sm)),
-
-//               _columnListTitle(context),
-//               // Table
-//               SizedBox(
-//                 height: 400,
-//                 child: PagingListener(
-//                   controller: _pagingController,
-//                   builder:
-//                       (context, state, fetchNextPage) =>
-//                           PagedListView<int, ListLaporanModel>.separated(
-//                             state: state,
-//                             fetchNextPage: fetchNextPage,
-//                             builderDelegate:
-//                                 PagedChildBuilderDelegate<ListLaporanModel>(
-//                                   animateTransitions: true,
-//                                   itemBuilder:
-//                                       (context, report, index) =>
-//                                           ReportCardAdminView(
-//                                             reportDate: report.tanggalKejadian,
-
-//                                             status: report.status,
-//                                             title: report.noRegistrasi,
-//                                             onTap: () {
-//                                               showLaporanDetailBottomSheet(
-//                                                 context,
-//                                                 report,
-//                                               );
-//                                             },
-//                                           ),
-//                                   firstPageProgressIndicatorBuilder:
-//                                       (_) => const Center(
-//                                         child: CircularProgressIndicator(),
-//                                       ),
-//                                   newPageProgressIndicatorBuilder:
-//                                       (_) => const Center(
-//                                         child: CircularProgressIndicator(),
-//                                       ),
-//                                   firstPageErrorIndicatorBuilder:
-//                                       (context) => PlaceHolderComponent(
-//                                         state: PlaceHolderState.customError,
-//                                       ),
-//                                   newPageErrorIndicatorBuilder:
-//                                       (context) => PlaceHolderComponent(
-//                                         state: PlaceHolderState.customError,
-//                                       ),
-//                                   noItemsFoundIndicatorBuilder:
-//                                       (context) => PlaceHolderComponent(
-//                                         state: PlaceHolderState.noNotifications,
-//                                       ),
-//                                 ),
-//                             separatorBuilder:
-//                                 (context, index) => const Divider(height: 1),
-//                           ),
-//                 ),
-//               ),
-
-//               // Pagination
-//               SizedBox(height: responsive.space(SizeScale.md)),
-//               Row(
-//                 mainAxisAlignment: MainAxisAlignment.center,
-//                 children: [
-//                   IconButton(
-//                     onPressed:
-//                         _currentPage > 1
-//                             ? () {
-//                               setState(() {
-//                                 _currentPage--;
-//                                 _animationController.reset();
-//                                 _animationController.forward();
-//                               });
-//                             }
-//                             : null,
-//                     icon: const Icon(Icons.arrow_back),
-//                   ),
-//                   Text(
-//                     "Page $_currentPage of ${(4 / _itemsPerPage).ceil()}",
-//                     style: TextStyle(
-//                       fontSize: responsive.fontSize(SizeScale.sm),
-//                     ),
-//                   ),
-//                   IconButton(
-//                     onPressed:
-//                         _currentPage < (4 / _itemsPerPage).ceil()
-//                             ? () {
-//                               setState(() {
-//                                 _currentPage++;
-//                                 _animationController.reset();
-//                                 _animationController.forward();
-//                               });
-//                             }
-//                             : null,
-//                     icon: const Icon(Icons.arrow_forward),
-//                   ),
-//                 ],
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   Text _taglineHeader(BuildContext context) {
-//     return Text(
-//       "Laporan Masyarakat Tersedia",
-//       style: context.textStyle.onestBold(size: SizeScale.md),
-//     );
-//   }
-
-//   Row _columnListTitle(BuildContext context) {
-//     return Row(
-//       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//       crossAxisAlignment: CrossAxisAlignment.center,
-//       children: [
-//         Text(
-//           "Nomor Registrasi".truncate(maxChars: 8),
-//           style: context.textStyle.onestBold(size: SizeScale.md),
-//         ),
-//         // Tanggal Pelaporan
-//         Text(
-//           "Tanggal Pelaporan",
-//           style: context.textStyle.onestBold(size: SizeScale.md),
-//         ),
-
-//         Text("Status", style: context.textStyle.onestBold(size: SizeScale.md)),
-//       ],
-//     );
-//   }
-
-//   SizedBox _searchBar(ResponsiveSizes responsive) =>
-//       SizedBox(height: responsive.space(SizeScale.md));
-
-//   FadeTransition _headerView(ResponsiveSizes responsive) {
-//     return FadeTransition(
-//       opacity: _fadeAnimation,
-//       child: Container(
-//         width: double.infinity,
-
-//         // margin: EdgeInsets.symmetric(
-//         //   horizontal: responsive.space(SizeScale.md),
-//         //   vertical: responsive.space(SizeScale.sm),
-//         // ),
-//         padding: EdgeInsets.all(responsive.space(SizeScale.lg)),
-//         decoration: BoxDecoration(
-//           color: Color(0xFF79B2E1),
-//           borderRadius: BorderRadius.circular(
-//             responsive.borderRadius(SizeScale.sm),
-//           ),
-//           image: DecorationImage(
-//             image: AssetImage("assets/man.png"),
-//             fit: BoxFit.contain,
-//           ),
-//           boxShadow: [
-//             BoxShadow(
-//               color: Colors.blue.withOpacity(0.1),
-//               blurRadius: 10,
-//               spreadRadius: 2,
-//               offset: Offset(0, 4),
-//             ),
-//           ],
-//         ),
-//         child: Row(
-//           crossAxisAlignment: CrossAxisAlignment.center,
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             Expanded(
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.center,
-//                 children: [
-//                   Text(
-//                     "Pelaporan DPMDPPA",
-//                     style: context.textStyle.onestBold(
-//                       size: SizeScale.xl,
-//                       color: Colors.white,
-//                     ),
-//                   ),
-//                   SizedBox(height: responsive.space(SizeScale.sm)),
-//                   Text(
-//                     "Jangan lupa selalu semangat 100% tangani kekerasan terhadap perempuan dan anak",
-//                     style: context.textStyle.dmSansRegular(
-//                       size: SizeScale.md,
-//                       color: Colors.white,
-//                     ),
-//                   ),
-//                   // Text(
-//                   //   "Jangan lupa selalu semangat 100% tangani kekerasan terhadap perempuan dan anak",
-//                   //   style: context.textStyle.dmSansRegular(
-//                   //     size: SizeScale.md,
-//                   //     color: Colors.white,
-//                   //   ),
-//                   //   textAlign: TextAlign.center,
-//                   // ),
-//                 ],
-//               ),
-//             ),
-//             SizedBox(width: responsive.space(SizeScale.md)),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   void showLaporanDetailBottomSheet(
-//     BuildContext context,
-//     ListLaporanModel laporan, {
-//     bool isRefreshing = false,
-//   }) async {
-//     // Gunakan rootNavigator untuk mencegah masalah context
-//     await showModalBottomSheet(
-//       context: context,
-//       isScrollControlled: true,
-//       backgroundColor: Colors.transparent,
-//       builder: (context) {
-//         return ReportDetailModal(
-//           laporan: laporan,
-//           onUpdate:
-//               () => showLaporanDetailBottomSheet(
-//                 context,
-//                 laporan,
-//                 isRefreshing: true,
-//               ),
-//           onOpenDialog: (innerContext) {
-//             showDialog(
-//               context: innerContext,
-//               builder: (dialogContext) {
-//                 return ActionDialog(
-//                   laporan: laporan,
-//                   onStatusUpdated: (newStatus) async {
-//                     try {
-//                       print("INI NILAI DARI NEW STATUS $newStatus");
-//                       // Update status
-//                       if (newStatus == "Selesai") {
-//                         await APIService.instance
-//                             .updateStatusReportAsDoneAdminService(
-//                               accessToken: _userProvider.userToken,
-//                               noRegistrasi: laporan.noRegistrasi,
-//                             );
-//                       } else if (newStatus == "Laporan masuk") {
-//                         await APIService.instance
-//                             .updateStatusReportAsProcessAdminService(
-//                               accessToken: _userProvider.userToken,
-//                               noRegistrasi: laporan.noRegistrasi,
-//                             );
-//                       }
-
-//                       // Tutup dialog menggunakan navigatorKey
-//                       // navigatorKey.currentState?.pop();
-
-//                       // Tutup modal menggunakan Future.delayed
-//                       Future.delayed(Duration.zero, () {
-//                         if (context.mounted) {
-//                           Navigator.of(context, rootNavigator: true).pop();
-//                         }
-//                       });
-
-//                       // Refresh data tanpa membuka kembali modal
-//                       // Gunakan state management atau callback untuk update UI
-//                       // _pagingController.refresh();
-
-//                       context.toast.showSuccess(
-//                         "Status berhasil diubah ke $newStatus",
-//                       );
-//                     } catch (e) {
-//                       context.toast.showError(
-//                         "Gagal mengupdate status: ${e.toString()}",
-//                       );
-//                     }
-//                   },
-//                 );
-//               },
-//             );
-//           },
-//         );
-//       },
-//     );
-//   }
-// }
-
-// !
 class _DashboardViewReportPageState extends State<DashboardViewReportPage>
     with SingleTickerProviderStateMixin {
   late final UserProvider _userProvider;
@@ -497,6 +71,7 @@ class _DashboardViewReportPageState extends State<DashboardViewReportPage>
     setState(() {
       searchQuery = query;
     });
+    _reportsNotifier.searchReports(query); // Panggil method search
   }
 
   @override
@@ -548,12 +123,17 @@ class _DashboardViewReportPageState extends State<DashboardViewReportPage>
                   ),
                 ],
               ),
+
               _searchBar(responsive),
 
               // Table Title
-              _taglineHeader(context),
+              _taglineHeader(context, responsive, _reportsNotifier),
               SizedBox(height: responsive.space(SizeScale.sm)),
-
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [],
+              ),
               _columnListTitle(context),
               SizedBox(
                 height: 400,
@@ -584,7 +164,7 @@ class _DashboardViewReportPageState extends State<DashboardViewReportPage>
                                 itemBuilder: (context, index) {
                                   final report = notifier.reports[index];
                                   return ReportCardAdminView(
-                                    reportDate: report.tanggalKejadian,
+                                    reportDate: report.tanggalPelaporan,
                                     status: report.status,
                                     title: report.noRegistrasi,
                                     onTap: () {
@@ -650,10 +230,108 @@ class _DashboardViewReportPageState extends State<DashboardViewReportPage>
     );
   }
 
-  Text _taglineHeader(BuildContext context) {
-    return Text(
-      "Laporan Masyarakat Tersedia",
-      style: context.textStyle.onestBold(size: SizeScale.md),
+  Row _taglineHeader(
+    BuildContext context,
+    ResponsiveSizes responsive,
+    AdminProvider adminProvider,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text("Laporan", style: context.textStyle.onestBold(size: SizeScale.md)),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.end,
+          spacing: 6,
+          children: [
+            ReportFilterDropdown(
+              adminProvider: _reportsNotifier,
+              onFilterApplied: () {
+                _animationController.reset();
+                _animationController.forward();
+              },
+            ),
+            GestureDetector(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    final adminProvider = Provider.of<AdminProvider>(
+                      context,
+                      listen: false,
+                    );
+                    return DonwloadedPdfDialog(adminProvider: adminProvider);
+                  },
+                );
+              },
+
+              child: Container(
+                padding: EdgeInsets.all(responsive.space(SizeScale.sm)),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(
+                    responsive.borderRadius(SizeScale.md),
+                  ),
+                  border: Border.all(color: Colors.grey[200]!),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.print,
+                      size: responsive.fontSize(SizeScale.md),
+                      color: Color(0xFF79B2E1),
+                    ),
+                    SizedBox(width: responsive.space(SizeScale.xs)),
+                    Text(
+                      'Export',
+                      style: context.textStyle.jakartaSansMedium(
+                        size: SizeScale.sm,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Container _tooltip(ResponsiveSizes responsive, String title, IconData icon) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: responsive.space(SizeScale.xs),
+        vertical: responsive.space(SizeScale.xs) / 2,
+      ),
+      decoration: BoxDecoration(
+        color: Color(0xFF79B2E1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.white, width: 1),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white),
+          Text(
+            title,
+            style: TextStyle(
+              color: AppColors.white,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 

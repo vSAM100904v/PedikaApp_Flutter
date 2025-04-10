@@ -48,6 +48,28 @@ class ListLaporanModel {
     this.waktuDiproses,
   });
 
+  Map<String, dynamic> toJson() => {
+    'alamat_detail_tkp': alamatDetailTkp,
+    'alamat_tkp': alamatTkp,
+    'alasan_dibatalkan': alasanDibatalkan,
+    'created_at': createdAt.toIso8601String(),
+    'dokumentasi': dokumentasi.toJson(),
+    'kategori_kekerasan_id': kategoriKekerasanId,
+    'kategori_lokasi_kasus': kategoriLokasiKasus,
+    'kronologis_kasus': kronologisKasus,
+    'no_registrasi': noRegistrasi,
+    'status': status,
+    'tanggal_kejadian': tanggalKejadian.toIso8601String(),
+    'tanggal_pelaporan': tanggalPelaporan.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
+    'user_id': userId,
+    'userid_melihat': useridMelihat,
+    'violence_category': violenceCategoryDetail.toJson(),
+    'waktu_dibatalkan': waktuDibatalkan,
+    'waktu_dilihat': waktuDilihat,
+    'waktu_diproses': waktuDiproses,
+  };
+
   factory ListLaporanModel.fromJson(Map<String, dynamic> json) {
     // Logging untuk field yang null atau kosong
     void logIfEmpty(String fieldName, dynamic value) {
@@ -130,28 +152,6 @@ class ListLaporanModel {
       waktuDiproses: json['waktu_diproses'] as String?,
     );
   }
-
-  Map<String, dynamic> toJson() => {
-    'alamat_detail_tkp': alamatDetailTkp,
-    'alamat_tkp': alamatTkp,
-    'alasan_dibatalkan': alasanDibatalkan,
-    'created_at': createdAt.toIso8601String(),
-    'dokumentasi': dokumentasi.toJson(),
-    'kategori_kekerasan_id': kategoriKekerasanId,
-    'kategori_lokasi_kasus': kategoriLokasiKasus,
-    'kronologis_kasus': kronologisKasus,
-    'no_registrasi': noRegistrasi,
-    'status': status,
-    'tanggal_kejadian': tanggalKejadian.toIso8601String(),
-    'tanggal_pelaporan': tanggalPelaporan.toIso8601String(),
-    'updated_at': updatedAt.toIso8601String(),
-    'user_id': userId,
-    'userid_melihat': useridMelihat,
-    'violence_category': violenceCategoryDetail.toJson(),
-    'waktu_dibatalkan': waktuDibatalkan,
-    'waktu_dilihat': waktuDilihat,
-    'waktu_diproses': waktuDiproses,
-  };
 
   // Metode copyWith
   ListLaporanModel copyWith({

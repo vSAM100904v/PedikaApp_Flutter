@@ -795,7 +795,7 @@ class APIService {
       _logger.log("INI ADALAH RESPONSE ${response.body}");
       if (response.statusCode == 200) {
         _logger.log('FCM token successfully sent to server');
-      } else {
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
         forceLogoutAndRedirect();
         throw Exception('Failed to send FCM token: ${response.statusCode}');
       }
@@ -975,6 +975,9 @@ class APIService {
 
         _logger.log("INI DATA YANG DI PAYLOAD ${payload['reports']}");
         return payload;
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        forceLogoutAndRedirect();
+        throw Exception('Failed to send FCM token: ${response.statusCode}');
       } else {
         throw Exception('Failed to load notifications: ${response.body} ');
       }

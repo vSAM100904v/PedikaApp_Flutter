@@ -422,6 +422,7 @@ class _BerandaState extends State<Beranda> {
                         ),
                       ],
                     ),
+
                     const SizedBox(height: 20),
                     // Statistik laporan dari AdminDashboard
                     _AdminDashboardSection(),

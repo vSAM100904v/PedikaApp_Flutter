@@ -1,8 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:motion_tab_bar_v2/motion-tab-bar.dart';
 import 'package:motion_tab_bar_v2/motion-badge.widget.dart';
 import 'package:motion_tab_bar_v2/motion-tab-controller.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:pa2_kelompok07/config.dart';
 import 'package:pa2_kelompok07/core/constant/constant.dart';
 import 'package:pa2_kelompok07/core/helpers/hooks/responsive_sizes.dart';
 import 'package:pa2_kelompok07/core/helpers/hooks/text_style.dart';
@@ -45,7 +47,7 @@ class _AdminLayoutState extends State<AdminLayout>
   }
 
   void _handleLogout(BuildContext context, String userName) {
-    print("ICONN PRESEDDD");
+    ;
 
     showDialog(
       context: context,
@@ -86,34 +88,63 @@ class _AdminLayoutState extends State<AdminLayout>
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.menu, color: AppColors.white),
+          onPressed: () {
+            // Open drawer or handle menu click
+            Scaffold.of(context).openDrawer();
+          },
+        ),
         title: Text(
-          widget.title!,
+          'PedikaApp',
           style: context.textStyle.onestBold(
             size: SizeScale.xl,
             color: AppColors.white,
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.logout, color: AppColors.white),
-            onPressed: () => _handleLogout(context, userName),
+          Consumer<UserProvider>(
+            builder: (context, userProvider, _) {
+              final user = userProvider.user;
+              final String? imageUrl = user?.photo_profile;
+
+              return GestureDetector(
+                onTap: () => _handleLogout(context, userName),
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    right: context.responsive.space(SizeScale.sm),
+                  ),
+                  child: CircleAvatar(
+                    radius: context.responsive.fontSize(SizeScale.md),
+                    backgroundColor: AppColors.white.withOpacity(0.2),
+                    backgroundImage:
+                        imageUrl != null
+                            ? CachedNetworkImageProvider(Config.fallbackImage)
+                            : CachedNetworkImageProvider(imageUrl!),
+                  ),
+                ),
+              );
+            },
           ),
         ],
-
         backgroundColor: Colors.blue.shade600,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(10)),
+        ),
       ),
       backgroundColor: AppColors.white,
       bottomNavigationBar: MotionTabBar(
         controller:
             _motionTabBarController, // ADD THIS if you need to change your tab programmatically
-        initialSelectedTab: "Dashboard",
+        initialSelectedTab: "Home",
         useSafeArea: true, // default: true, apply safe area wrapper
         labelAlwaysVisible:
             false, // default: false, set to "true" if you need to always show labels
-        labels: const ["Laporan", "Dashboard", "Settings"],
+        labels: const ["Laporan", "Home", "Settings"],
 
         //// use default icon (with IconData)
-        icons: const [Icons.summarize, Icons.dashboard, Icons.settings],
+        icons: const [Icons.summarize, Icons.home, Icons.settings],
 
         tabSize: rs.space(SizeScale.xxxl) + rs.space(SizeScale.xl),
         tabBarHeight: rs.space(SizeScale.xxxl) + rs.space(SizeScale.xl),
