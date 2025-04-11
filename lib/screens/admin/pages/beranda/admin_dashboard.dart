@@ -6,7 +6,6 @@ import 'package:pa2_kelompok07/screens/laporan/laporan_anda_screen.dart';
 import '../../widgets/sidebar.dart';
 import '../Donasi/halaman_donasi.dart';
 import '../event/halaman_event.dart';
-import '../janjiTemu/janjitemu.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/kategoriKekerasan/halamanbaru_kategori.dart';
 // import '../konten/konten.dart';
 import '../konten/halaman_konten.dart';
@@ -400,11 +399,7 @@ class _BerandaState extends State<Beranda> {
                               () =>
                                   _navigateToPage(const HalamanbaruKategori()),
                         ),
-                        _MenuItem(
-                          icon: Icons.edit_calendar,
-                          label: 'Janji temu',
-                          onTap: () => _navigateToPage(const JanjiTemu()),
-                        ),
+
                         _MenuItem(
                           icon: Icons.article,
                           label: 'Konten',

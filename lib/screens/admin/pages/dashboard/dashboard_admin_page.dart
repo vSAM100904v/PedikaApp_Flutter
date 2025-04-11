@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
+import 'package:motion_tab_bar_v2/motion-tab-controller.dart';
 import 'package:pa2_kelompok07/config.dart';
 import 'package:pa2_kelompok07/core/constant/constant.dart';
 
@@ -13,9 +14,12 @@ import 'package:pa2_kelompok07/core/persentation/widgets/atoms/admin_header.dart
 import 'package:pa2_kelompok07/core/persentation/widgets/atoms/placeholder_component.dart';
 import 'package:pa2_kelompok07/core/persentation/widgets/cards/report_admin_card.dart';
 import 'package:pa2_kelompok07/core/persentation/widgets/dialogs/action_dialog.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/dialogs/update_emergency_contact.dart';
 import 'package:pa2_kelompok07/core/persentation/widgets/modals/report_detail_modal.dart';
 import 'package:pa2_kelompok07/core/persentation/widgets/views/report_count.dart';
 import 'package:pa2_kelompok07/main.dart';
+import 'package:pa2_kelompok07/model/report/count_report_status.dart';
+import 'package:pa2_kelompok07/model/report/emergency_contact_model.dart';
 
 import 'package:pa2_kelompok07/model/report/list_report_model.dart';
 import 'package:pa2_kelompok07/model/report/report_category_model.dart';
@@ -23,26 +27,33 @@ import 'package:pa2_kelompok07/model/report/report_request_model.dart';
 import 'package:pa2_kelompok07/provider/admin_provider.dart';
 import 'package:pa2_kelompok07/provider/user_provider.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/Donasi/halaman_donasi.dart';
+import 'package:pa2_kelompok07/screens/admin/pages/beranda/admin_dashboard.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/event/halaman_event.dart';
-import 'package:pa2_kelompok07/screens/admin/pages/janjiTemu/janjitemu.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/kategoriKekerasan/halamanbaru_kategori.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/konten/halaman_konten.dart';
 import 'package:pa2_kelompok07/services/api_service.dart';
 import 'package:pa2_kelompok07/utils/loading_dialog.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 
 class DashboardRootPage extends StatefulWidget {
-  const DashboardRootPage({super.key});
-
+  final MotionTabBarController controller;
+  const DashboardRootPage({super.key, required this.controller});
   @override
   State<DashboardRootPage> createState() => _DashboardRootPageState();
 }
 
 class _DashboardRootPageState extends State<DashboardRootPage>
-    with SingleTickerProviderStateMixin {
+    with AutomaticKeepAliveClientMixin {
+  late Future<CountReportStatus> _statsFuture;
+  final APIService _apiService = APIService();
+  late Future<String> _emergencyContactFuture; // Simpan Future sebagai state
+
   @override
   void initState() {
     super.initState();
+    _statsFuture = _apiService.fetchStatusStats();
+    _emergencyContactFuture = APIService.instance.fetchEmergencyContact();
   }
 
   @override
@@ -55,7 +66,10 @@ class _DashboardRootPageState extends State<DashboardRootPage>
   }
 
   @override
+  bool get wantKeepAlive => true;
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final responsive = context.responsive;
     return Scaffold(
       backgroundColor: AppColors.white,
@@ -68,63 +82,133 @@ class _DashboardRootPageState extends State<DashboardRootPage>
             children: [
               _headerView(responsive),
               SizedBox(height: responsive.space(SizeScale.sm)),
-              GridView.count(
-                crossAxisCount: 3,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 1,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
+              Column(
+                spacing: 12,
                 children: [
-                  _MenuItem(
-                    icon: Icons.category,
-                    label: 'Kategori Kekerasan',
-                    onTap: () => _navigateToPage(const HalamanbaruKategori()),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _MenuItem(
+                        icon: Icons.category,
+                        label: 'Kategori Kekerasan',
+                        onTap:
+                            () => _navigateToPage(const HalamanbaruKategori()),
+                      ),
+                      _MenuItem(
+                        icon: Icons.edit_calendar,
+                        label: 'Janji temu',
+                        onTap:
+                            () => context.toast.showSuccess("Under Devlopping"),
+                      ),
+                      _MenuItem(
+                        icon: Icons.article,
+                        label: 'Konten',
+                        onTap: () => _navigateToPage(const HalamanKonten()),
+                      ),
+                    ],
                   ),
-                  _MenuItem(
-                    icon: Icons.edit_calendar,
-                    label: 'Janji temu',
-                    onTap: () => _navigateToPage(const JanjiTemu()),
-                  ),
-                  _MenuItem(
-                    icon: Icons.article,
-                    label: 'Konten',
-                    onTap: () => _navigateToPage(const HalamanKonten()),
-                  ),
-                  _MenuItem(
-                    icon: Icons.event,
-                    label: 'Event',
-                    onTap: () => _navigateToPage(const HalamanEvent()),
-                  ),
-                  _MenuItem(
-                    icon: Icons.volunteer_activism,
-                    label: 'Donasi',
-                    onTap: () => _navigateToPage(const HalamanDonasi()),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 24,
+                    children: [
+                      Center(
+                        child: _MenuItem(
+                          icon: Icons.event,
+                          label: 'Event',
+                          onTap: () => _navigateToPage(const HalamanEvent()),
+                        ),
+                      ),
+                      Center(
+                        child: _MenuItem(
+                          icon: Icons.volunteer_activism,
+                          label: 'Donasi',
+                          onTap: () => _navigateToPage(const HalamanDonasi()),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-
-              Column(
-                spacing: 14,
-                children: [
-                  LaporanCard(
-                    jumlah: 101,
-                    reportType: "Semua Laporan",
-                    onTap: () {},
-                  ),
-                  LaporanCard(
-                    jumlah: 203,
-                    reportType: "Laporan Ditolak",
-                    onTap: () {},
-                  ),
-                  LaporanCard(
-                    reportType: "Laporan dibatalkan",
-                    jumlah: 204,
-                    onTap: () {},
-                  ),
-                ],
+              SizedBox(height: responsive.space(SizeScale.sm)),
+              FutureBuilder<CountReportStatus>(
+                future: _statsFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    // Tampilkan shimmer effect saat loading
+                    return Column(
+                      children: List.generate(
+                        3, // Jumlah card yang akan di-shimmer
+                        (index) => _buildShimmerCard(),
+                      ),
+                    );
+                  } else if (snapshot.hasError) {
+                    return const Center(
+                      child: PlaceHolderComponent(
+                        state: PlaceHolderState.error,
+                      ),
+                    );
+                  } else if (snapshot.hasData) {
+                    final stats = snapshot.data!;
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        LaporanCard(
+                          jumlah:
+                              stats.laporanMasuk +
+                              stats.laporanDilihat +
+                              stats.laporanDiproses +
+                              stats.laporanSelesai +
+                              stats.laporanDibatalkan,
+                          reportType: "Semua Laporan",
+                          onTap: () => widget.controller.index = 0,
+                        ),
+                        const SizedBox(height: 14),
+                        LaporanCard(
+                          jumlah: stats.laporanDiproses,
+                          reportType: "Laporan Diproses",
+                          onTap: () => widget.controller.index = 0,
+                        ),
+                        const SizedBox(height: 14),
+                        LaporanCard(
+                          jumlah: stats.laporanDibatalkan,
+                          reportType: "Laporan Dibatalkan",
+                          onTap: () => widget.controller.index = 0,
+                        ),
+                      ],
+                    );
+                  } else {
+                    return const Center(
+                      child: PlaceHolderComponent(
+                        state: PlaceHolderState.emptyReport,
+                      ),
+                    );
+                  }
+                },
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerCard() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(
+        margin: const EdgeInsets.all(10),
+        decoration: const BoxDecoration(
+          color: Colors.grey,
+          borderRadius: BorderRadius.all(Radius.circular(10)),
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.all(Radius.circular(10)),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Container(color: Colors.grey),
           ),
         ),
       ),
@@ -135,10 +219,6 @@ class _DashboardRootPageState extends State<DashboardRootPage>
     return Container(
       width: double.infinity,
 
-      // margin: EdgeInsets.symmetric(
-      //   horizontal: responsive.space(SizeScale.md),
-      //   vertical: responsive.space(SizeScale.sm),
-      // ),
       padding: EdgeInsets.all(responsive.space(SizeScale.lg)),
       decoration: BoxDecoration(
         color: Color(0xFF79B2E1),
@@ -183,15 +263,52 @@ class _DashboardRootPageState extends State<DashboardRootPage>
                   ),
                 ),
                 SizedBox(height: responsive.space(SizeScale.sm)),
-                Text(
-                  "0895626467202",
-                  style: context.textStyle.onestBold(
-                    size: SizeScale.md,
-                    color: Colors.grey.shade800,
-                  ),
+                FutureBuilder<String>(
+                  future: APIService.instance.fetchEmergencyContact(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const CircularProgressIndicator();
+                    } else if (snapshot.hasError) {
+                      return Text(
+                        "Oops ada kesalahan !",
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      );
+                    } else if (snapshot.hasData) {
+                      return Text(
+                        snapshot.data!,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      );
+                    } else {
+                      return const Text('No data');
+                    }
+                  },
                 ),
                 SizedBox(height: responsive.space(SizeScale.sm)),
-                _tooltip(responsive, "Edit kontak darurat", Icons.phone),
+                GestureDetector(
+                  onTap: () async {
+                    final result = await showDialog<EmergencyContact>(
+                      context: context,
+                      builder:
+                          (context) => const UpdateEmergencyContactDialog(),
+                    );
+                    if (result != null) {
+                      context.toast.showSuccess(
+                        "No Contak berhasil di update ${result.phone}}",
+                      );
+                    }
+                  },
+                  child: _tooltip(
+                    responsive,
+                    "Edit kontak darurat",
+                    Icons.phone,
+                  ),
+                ),
               ],
             ),
           ),
@@ -218,7 +335,7 @@ class _DashboardRootPageState extends State<DashboardRootPage>
           Icon(icon, color: Colors.black),
           Text(
             title,
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+            style: context.textStyle.jakartaSansMedium(size: SizeScale.md),
             textAlign: TextAlign.center,
           ),
         ],
@@ -247,52 +364,54 @@ class _MenuItem extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(
-        responsive.borderRadius(SizeScale.md),
-      ),
-      splashColor: colors.primary.withOpacity(0.1),
-      highlightColor: colors.primary.withOpacity(0.05),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: colors.surface,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: responsive.space(SizeScale.xs),
-                  spreadRadius: 0.5,
-                ),
-              ],
-            ),
-            padding: EdgeInsets.all(responsive.space(SizeScale.sm)),
-            child: Icon(
-              icon,
-              color: Color(0xFF79B2E1),
-              size: responsive.fontSize(SizeScale.xl),
-            ),
-          ),
-          SizedBox(height: responsive.space(SizeScale.xs)),
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: responsive.widthPercent(20), // Adjust as needed
-            ),
-            child: Text(
-              label,
-              style: textStyle.jakartaSansMedium(
-                size: SizeScale.xs,
-                color: colors.onSurface.withOpacity(0.8),
+    return Center(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(
+          responsive.borderRadius(SizeScale.md),
+        ),
+        splashColor: colors.primary.withOpacity(0.1),
+        highlightColor: colors.primary.withOpacity(0.05),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: responsive.space(SizeScale.xs),
+                    spreadRadius: 0.5,
+                  ),
+                ],
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              padding: EdgeInsets.all(responsive.space(SizeScale.sm)),
+              child: Icon(
+                icon,
+                color: Color(0xFF79B2E1),
+                size: responsive.fontSize(SizeScale.xl),
+              ),
             ),
-          ),
-        ],
+            SizedBox(height: responsive.space(SizeScale.xs)),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: responsive.widthPercent(20), // Adjust as needed
+              ),
+              child: Text(
+                label,
+                style: textStyle.jakartaSansMedium(
+                  size: SizeScale.xs,
+                  color: colors.onSurface.withOpacity(0.8),
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

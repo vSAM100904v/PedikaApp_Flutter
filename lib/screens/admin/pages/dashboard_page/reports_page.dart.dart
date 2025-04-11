@@ -37,7 +37,7 @@ class DashboardViewReportPage extends StatefulWidget {
 }
 
 class _DashboardViewReportPageState extends State<DashboardViewReportPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late final UserProvider _userProvider;
   late AdminProvider _reportsNotifier;
   late AnimationController _animationController;
@@ -75,7 +75,10 @@ class _DashboardViewReportPageState extends State<DashboardViewReportPage>
   }
 
   @override
+  bool get wantKeepAlive => true;
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final responsive = context.responsive;
     return Scaffold(
       backgroundColor: AppColors.white,
@@ -305,33 +308,6 @@ class _DashboardViewReportPageState extends State<DashboardViewReportPage>
           ],
         ),
       ],
-    );
-  }
-
-  Container _tooltip(ResponsiveSizes responsive, String title, IconData icon) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: responsive.space(SizeScale.xs),
-        vertical: responsive.space(SizeScale.xs) / 2,
-      ),
-      decoration: BoxDecoration(
-        color: Color(0xFF79B2E1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.white, width: 1),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white),
-          Text(
-            title,
-            style: TextStyle(
-              color: AppColors.white,
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
     );
   }
 

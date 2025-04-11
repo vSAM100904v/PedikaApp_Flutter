@@ -1,17 +1,16 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:motion_tab_bar_v2/motion-tab-bar.dart';
-import 'package:motion_tab_bar_v2/motion-badge.widget.dart';
 import 'package:motion_tab_bar_v2/motion-tab-controller.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:pa2_kelompok07/config.dart';
 import 'package:pa2_kelompok07/core/constant/constant.dart';
 import 'package:pa2_kelompok07/core/helpers/hooks/responsive_sizes.dart';
 import 'package:pa2_kelompok07/core/helpers/hooks/text_style.dart';
-import 'package:pa2_kelompok07/core/persentation/widgets/dialogs/logout_dialog.dart';
+
 import 'package:pa2_kelompok07/provider/user_provider.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/dashboard/dashboard_admin_page.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/dashboard_page/reports_page.dart.dart';
+import 'package:pa2_kelompok07/screens/admin/widgets/sidebar.dart';
 import 'package:provider/provider.dart';
 
 class AdminLayout extends StatefulWidget {
@@ -28,71 +27,39 @@ class _AdminLayoutState extends State<AdminLayout>
   // TabController? _tabController;
   MotionTabBarController? _motionTabBarController;
   late final UserProvider _userProvider;
-
+  late final ValueNotifier<int> _selectedTabNotifier;
   @override
   void initState() {
     super.initState();
     _userProvider = Provider.of<UserProvider>(context, listen: false);
     _motionTabBarController = MotionTabBarController(
-      initialIndex: 2,
+      initialIndex: 1,
       length: 3,
       vsync: this,
     );
+    _selectedTabNotifier = ValueNotifier<int>(_motionTabBarController!.index);
   }
 
   @override
   void dispose() {
     _motionTabBarController?.dispose();
+    _selectedTabNotifier.dispose();
     super.dispose();
-  }
-
-  void _handleLogout(BuildContext context, String userName) {
-    ;
-
-    showDialog(
-      context: context,
-      builder:
-          (dialogContext) => LogoutConfirmationDialog(
-            userName: userName,
-            onLogoutConfirmed: () async {
-              try {
-                await _userProvider.logout();
-                // Periksa apakah widget masih mounted sebelum navigasi
-                if (mounted) {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/login',
-                    (route) => false,
-                  );
-                } else {
-                  print("Widget is no longer mounted, skipping navigation");
-                }
-              } catch (e) {
-                print("Logout failed: $e");
-                if (mounted) {
-                  // Tampilkan pesan error jika masih mounted
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text("Logout gagal: $e")));
-                }
-              }
-            },
-          ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final ResponsiveSizes rs = context.responsive;
-    final userName = _userProvider.user?.full_name ?? 'Pengguna';
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.menu, color: AppColors.white),
-          onPressed: () {
-            // Open drawer or handle menu click
-            Scaffold.of(context).openDrawer();
+
+        leading: Builder(
+          builder: (BuildContext context) {
+            return IconButton(
+              icon: Icon(Icons.menu, color: AppColors.white),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            );
           },
         ),
         title: Text(
@@ -102,26 +69,24 @@ class _AdminLayoutState extends State<AdminLayout>
             color: AppColors.white,
           ),
         ),
+
         actions: [
           Consumer<UserProvider>(
             builder: (context, userProvider, _) {
               final user = userProvider.user;
               final String? imageUrl = user?.photo_profile;
 
-              return GestureDetector(
-                onTap: () => _handleLogout(context, userName),
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    right: context.responsive.space(SizeScale.sm),
-                  ),
-                  child: CircleAvatar(
-                    radius: context.responsive.fontSize(SizeScale.md),
-                    backgroundColor: AppColors.white.withOpacity(0.2),
-                    backgroundImage:
-                        imageUrl != null
-                            ? CachedNetworkImageProvider(Config.fallbackImage)
-                            : CachedNetworkImageProvider(imageUrl!),
-                  ),
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: context.responsive.space(SizeScale.sm),
+                ),
+                child: CircleAvatar(
+                  radius: context.responsive.fontSize(SizeScale.md),
+                  backgroundColor: AppColors.white.withOpacity(0.2),
+                  backgroundImage:
+                      imageUrl != null
+                          ? CachedNetworkImageProvider(Config.fallbackImage)
+                          : CachedNetworkImageProvider(imageUrl!),
                 ),
               );
             },
@@ -133,6 +98,7 @@ class _AdminLayoutState extends State<AdminLayout>
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(10)),
         ),
       ),
+      drawer: AppSidebar(),
       backgroundColor: AppColors.white,
       bottomNavigationBar: MotionTabBar(
         controller:
@@ -161,24 +127,26 @@ class _AdminLayoutState extends State<AdminLayout>
         tabIconSelectedColor: Colors.black,
         tabBarColor: AppColors.white,
         onTabItemSelected: (int value) {
-          setState(() {
-            _motionTabBarController!.index = value;
-          });
+          _motionTabBarController!.index = value;
+          _selectedTabNotifier.value = value;
         },
       ),
-      body: TabBarView(
-        physics:
-            const NeverScrollableScrollPhysics(), // swipe navigation handling is not supported
-        controller: _motionTabBarController,
-        children: <Widget>[
-          DashboardViewReportPage(),
-          DashboardRootPage(),
-
-          MainPageContentComponent(
-            title: "Settings Page",
-            controller: _motionTabBarController!,
-          ),
-        ],
+      body: ValueListenableBuilder<int>(
+        valueListenable: _selectedTabNotifier,
+        builder: (context, selectedIndex, _) {
+          return TabBarView(
+            physics: const NeverScrollableScrollPhysics(),
+            controller: _motionTabBarController,
+            children: <Widget>[
+              DashboardViewReportPage(),
+              DashboardRootPage(controller: _motionTabBarController!),
+              MainPageContentComponent(
+                title: "Settings Page",
+                controller: _motionTabBarController!,
+              ),
+            ],
+          );
+        },
       ),
     );
   }

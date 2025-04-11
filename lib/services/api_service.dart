@@ -14,6 +14,8 @@ import 'package:pa2_kelompok07/model/appointment_request_model.dart';
 import 'package:pa2_kelompok07/model/appointment_response_model.dart';
 import 'package:pa2_kelompok07/model/auth/login_response_model.dart';
 import 'package:pa2_kelompok07/model/auth/register_response_model.dart';
+import 'package:pa2_kelompok07/model/report/count_report_status.dart';
+import 'package:pa2_kelompok07/model/report/emergency_contact_model.dart';
 import 'package:pa2_kelompok07/model/report/list_report_model.dart';
 import 'package:pa2_kelompok07/model/report/report_request_model.dart';
 import 'package:pa2_kelompok07/model/report/report_response_model.dart';
@@ -1254,6 +1256,85 @@ class APIService {
     } catch (e) {
       _logger.log('Error in DeleteTrackingLaporan: $e');
       rethrow;
+    }
+  }
+
+  Future<CountReportStatus> fetchStatusStats() async {
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'userToken');
+    final response = await http.get(
+      Uri.parse('${Config.apiUrl}${Config.reportStatusCountRouter}'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      if (jsonData['status'] == 'success') {
+        _logger.log("INI ADLAAH DATANYAAAAAAA $jsonData");
+        return CountReportStatus.fromJson(jsonData['Data']);
+      } else {
+        throw Exception('Failed to load status stats: ${jsonData['message']}');
+      }
+    } else {
+      throw Exception('Failed to load status stats: ${response.statusCode}');
+    }
+  }
+
+  Future<EmergencyContact> updateEmergencyContact(
+    EmergencyContact updatedContact,
+  ) async {
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'userToken');
+    final response = await http.put(
+      Uri.parse('${Config.apiUrl}${Config.editEmergencyContactAPI}'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(updatedContact.toJson()),
+    );
+
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body);
+      if (jsonData['success'] == 1) {
+        return EmergencyContact.fromJson(jsonData['data']);
+      } else {
+        throw Exception(
+          'Failed to update emergency contact: ${jsonData['message']}',
+        );
+      }
+    } else {
+      throw Exception(
+        'Failed to update emergency contact: ${response.statusCode}',
+      );
+    }
+  }
+
+  Future<String> fetchEmergencyContact() async {
+    final url = Uri.parse("${Config.apiUrl}${Config.emergencyContactAPI}");
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'userToken');
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    _logger.log("INI NDATANYA ${response.body}");
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      _logger.log("INI NDATANYA ${response.body}");
+      return data['data']['Phone'] as String;
+    } else if (response.statusCode == 401 || response.statusCode == 403) {
+      forceLogoutAndRedirect();
+      throw Exception('Failed to send FCM token: ${response.statusCode}');
+    } else {
+      throw Exception('Gagal mengambil data kontak darurat');
     }
   }
 }

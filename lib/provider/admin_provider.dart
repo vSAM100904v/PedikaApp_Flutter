@@ -17,7 +17,7 @@ class AdminProvider extends ChangeNotifier {
       []; // Tambahan untuk menyimpan data asli
   bool _isLoading = false;
   String? _error;
-  final int _pageSize = 5;
+  final int _pageSize = 10;
   int _currentPage = 1;
   int _totalPages = 1;
   final UserProvider _userProvider;

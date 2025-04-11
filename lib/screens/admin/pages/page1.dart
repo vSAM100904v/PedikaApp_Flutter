@@ -3,7 +3,6 @@ import 'package:pa2_kelompok07/screens/admin/pages/Donasi/donasi.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/kategoriKekerasan/kategorikekerasana.dart';
 import 'package:flutter/material.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/konten/konten.dart';
-import 'package:pa2_kelompok07/screens/admin/pages/janjiTemu/janjitemu.dart';
 import 'package:pa2_kelompok07/screens/admin/pages/beranda/admin_dashboard.dart';
 import 'package:pa2_kelompok07/screens/admin/heading.dart';
 
@@ -87,17 +86,6 @@ class Page1 extends StatelessWidget {
               child: const Text('Daftar Laporan'),
             ),
             const SizedBox(height: 15),
-
-            ElevatedButton(
-              onPressed: () {
-                // Navigasi ke halaman 2
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const JanjiTemu()),
-                );
-              },
-              child: const Text('Janji  Temu'),
-            ),
 
             const SizedBox(height: 15),
             ElevatedButton(

@@ -61,6 +61,8 @@ class Config {
 
   // Endpoint tambahan untuk emergency contacts dan donations
   static const String emergencyContactAPI = "/api/admin/emergency-contact";
+  static const String editEmergencyContactAPI =
+      "/api/admin/emergency-contact-edit";
   static const String donationsAPI = "/api/donations";
   static const String retrieveUserNotification =
       "/api/masyarakat/retrieve-notification";
@@ -86,4 +88,5 @@ class Config {
       "/api/admin/delete-tracking-laporan";
   static const String updateTrackingReportAdminRouter =
       "/api/admin/edit-tracking-laporan";
+  static const String reportStatusCountRouter = "/api/admin/status-stats";
 }

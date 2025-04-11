@@ -1,14 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:pa2_kelompok07/core/helpers/toasters/toast.dart';
+import 'package:pa2_kelompok07/core/persentation/widgets/dialogs/logout_dialog.dart';
 import 'package:pa2_kelompok07/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import '../pages/beranda/admin_dashboard.dart';
 import '../pages/Donasi/donasi.dart';
 import '../pages/event/event.dart';
-import '../pages/janjiTemu/janjitemu.dart';
 import '../pages/konten/konten.dart';
 
-class AppSidebar extends StatelessWidget {
+class AppSidebar extends StatefulWidget {
   const AppSidebar({Key? key}) : super(key: key);
+
+  @override
+  State<AppSidebar> createState() => _AppSidebarState();
+}
+
+class _AppSidebarState extends State<AppSidebar> {
+  late final UserProvider _userProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    _userProvider = Provider.of<UserProvider>(context, listen: false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,18 +75,6 @@ class AppSidebar extends StatelessWidget {
             },
           ),
 
-          _buildMenuItem(
-            context,
-            icon: Icons.edit_calendar,
-            title: 'Janji Temu',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const JanjiTemu()),
-              );
-            },
-          ),
           _buildMenuItem(
             context,
             icon: Icons.article,
@@ -159,39 +161,11 @@ class AppSidebar extends StatelessWidget {
             context,
             icon: Icons.logout,
             title: 'Keluar',
-            onTap: () {
-              Navigator.pop(context);
-              showDialog(
-                context: context,
-                builder:
-                    (context) => AlertDialog(
-                      title: const Text('Konfirmasi'),
-                      content: const Text(
-                        'Apakah Anda yakin ingin keluar dari aplikasi?',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Batal'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            final userProvider = Provider.of<UserProvider>(
-                              context,
-                              listen: false,
-                            );
-                            userProvider.logout();
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Berhasil keluar')),
-                            );
-                          },
-                          child: const Text('Ya'),
-                        ),
-                      ],
-                    ),
-              );
-            },
+            onTap:
+                () => _handleLogout(
+                  context,
+                  _userProvider.user?.full_name ?? "admin",
+                ),
           ),
         ],
       ),
@@ -219,6 +193,36 @@ class AppSidebar extends StatelessWidget {
       ),
       tileColor: isActive ? const Color(0xFFEAF2F8) : null,
       onTap: onTap,
+    );
+  }
+
+  void _handleLogout(BuildContext context, String userName) {
+    showDialog(
+      context: context,
+      builder:
+          (dialogContext) => LogoutConfirmationDialog(
+            userName: userName,
+            onLogoutConfirmed: () async {
+              try {
+                await _userProvider.logout();
+                // Periksa apakah widget masih mounted sebelum navigasi
+                if (mounted) {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/login',
+                    (route) => false,
+                  );
+                } else {
+                  // TODO:
+                }
+              } catch (e) {
+                if (mounted) {
+                  // Tampilkan pesan error jika masih mounted
+                  context.toast.showError("Logout Gagal");
+                }
+              }
+            },
+          ),
     );
   }
 }
