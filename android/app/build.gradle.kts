@@ -67,10 +67,10 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = "vpn_sistemkode" // Directly input the value
-            keyPassword = "tlm221lv63" // Directly input the value
-            storeFile = file("C:/Users/ASUS/vpn-sistemkode.jks") // Directly input the value
-            storePassword = "tlm221lv63" // Directly input the value
+            keyAlias = "SEESUAIIINNN_SAMA_CASES_KALIAN" // Directly input the value
+            keyPassword = "SEESUAIIINNN_SAMA_CASES_KALIAN" // Directly input the value
+            storeFile = file("SEESUAIIINNN_SAMA_CASES_KALIAN") // Directly input the value
+            storePassword = "SEESUAIIINNN_SAMA_CASES_KALIAN" // Directly input the value
         }
     }
     buildTypes {
