@@ -71,7 +71,7 @@ class _DashboardViewReportPageState extends State<DashboardViewReportPage>
     setState(() {
       searchQuery = query;
     });
-    _reportsNotifier.searchReports(query); // Panggil method search
+    _reportsNotifier.searchReports(query);
   }
 
   @override
@@ -170,6 +170,11 @@ class _DashboardViewReportPageState extends State<DashboardViewReportPage>
                                     reportDate: report.tanggalPelaporan,
                                     status: report.status,
                                     title: report.noRegistrasi,
+                                    isSelected: notifier.selectedReports
+                                        .contains(report),
+                                    onSelectionChanged: () {
+                                      notifier.toggleReportSelection(report);
+                                    },
                                     onTap: () {
                                       showLaporanDetailBottomSheet(
                                         context,
@@ -260,10 +265,6 @@ class _DashboardViewReportPageState extends State<DashboardViewReportPage>
                 showDialog(
                   context: context,
                   builder: (context) {
-                    final adminProvider = Provider.of<AdminProvider>(
-                      context,
-                      listen: false,
-                    );
                     return DonwloadedPdfDialog(adminProvider: adminProvider);
                   },
                 );

@@ -7,6 +7,8 @@ class ReportCardAdminView extends StatelessWidget {
   final DateTime reportDate;
   final String status;
   final VoidCallback? onTap;
+  final bool isSelected;
+  final VoidCallback onSelectionChanged;
 
   const ReportCardAdminView({
     Key? key,
@@ -14,10 +16,13 @@ class ReportCardAdminView extends StatelessWidget {
     required this.reportDate,
     required this.status,
     this.onTap,
+    required this.isSelected,
+    required this.onSelectionChanged,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(
@@ -36,6 +41,13 @@ class ReportCardAdminView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            Checkbox(
+              value: isSelected,
+              onChanged: (value) {
+                onSelectionChanged();
+              },
+              activeColor: theme.primaryColor,
+            ),
             Expanded(
               child: Text(
                 title,

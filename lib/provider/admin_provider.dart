@@ -30,6 +30,37 @@ class AdminProvider extends ChangeNotifier {
   int get currentPage => _currentPage;
   int get totalPages => _totalPages;
 
+  List<ListLaporanModel> _selectedReports = [];
+
+  List<ListLaporanModel> get selectedReports => _selectedReports;
+
+  // Method untuk menambah/menghapus laporan yang dipilih
+  void toggleReportSelection(ListLaporanModel report) {
+    if (_selectedReports.contains(report)) {
+      _selectedReports.remove(report);
+    } else {
+      _selectedReports.add(report);
+    }
+    notifyListeners();
+  }
+
+  // Method untuk download laporan yang dipilih
+  Future<File> downloadSelectedReports() async {
+    if (_selectedReports.isEmpty) {
+      throw Exception("Tidak ada laporan yang dipilih");
+    }
+
+    // Implementasi download laporan yang dipilih
+    // Ganti dengan logika download sesuai kebutuhan Anda
+    // return await DocumentManagerService.generateReportsPdf({reports: _selectedReports, fileName: 'selected_reports_${DateTime.now().millisecondsSinceEpoch}', title: 'Laporan Kekerasan Terpilih'});
+    return await DocumentManagerService.generateReportsPdf(
+      reports: _selectedReports,
+      fileName:
+          'reports_page_$_currentPage${DateTime.now().millisecondsSinceEpoch}',
+      title: 'Laporan Kekerasan - Halaman Yang dipilih',
+    );
+  }
+
   void searchReports(String query) {
     if (query.isEmpty) {
       _reports = List.from(

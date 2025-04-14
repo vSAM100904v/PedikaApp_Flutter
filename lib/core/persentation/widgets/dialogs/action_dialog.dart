@@ -204,10 +204,7 @@ class _ActionDialogState extends State<ActionDialog>
             child: OutlinedButton(
               style: _outlinedButtonStyle(responsive, redColor),
               onPressed: () => Navigator.pop(context),
-              child: Text(
-                "Batalkan Laporan",
-                style: TextStyle(color: redColor),
-              ),
+              child: Text("Tutup", style: TextStyle(color: redColor)),
             ),
           ),
         ],

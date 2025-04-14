@@ -85,7 +85,9 @@ class _DonwloadedPdfDialogState extends State<DonwloadedPdfDialog>
     final textStyle = context.textStyle;
     final responsive = context.responsive;
     final theme = Theme.of(context);
-
+    print(
+      "PANJANG DARI SELECTED REPORT ${widget.adminProvider.selectedReports.length}",
+    );
     return Center(
       child: ScaleTransition(
         scale: _scaleAnimation,
@@ -150,6 +152,32 @@ class _DonwloadedPdfDialogState extends State<DonwloadedPdfDialog>
                           'download semua laporan',
                         ),
                   ),
+                  // Download Selected Reports
+                  if (widget.adminProvider.selectedReports.isNotEmpty)
+                    Column(
+                      children: [
+                        SizedBox(height: responsive.space(SizeScale.md)),
+                        Divider(height: 1, color: Colors.grey[200]),
+                        SizedBox(height: responsive.space(SizeScale.md)),
+                        _buildDownloadOption(
+                          context: context,
+                          icon: Icons.check_circle,
+                          title: 'Download Laporan Terpilih',
+                          description:
+                              'Unduh laporan yang telah dipilih (${widget.adminProvider.selectedReports.length})',
+                          isLoading:
+                              _isLoading &&
+                              _currentAction == 'download laporan terpilih',
+                          onTap:
+                              () => _handleDownload(
+                                () =>
+                                    widget.adminProvider
+                                        .downloadSelectedReports(),
+                                'download laporan terpilih',
+                              ),
+                        ),
+                      ],
+                    ),
 
                   SizedBox(height: responsive.space(SizeScale.md)),
                   Divider(height: 1, color: Colors.grey[200]),
@@ -179,23 +207,9 @@ class _DonwloadedPdfDialogState extends State<DonwloadedPdfDialog>
                   SizedBox(height: responsive.space(SizeScale.md)),
 
                   // Download Single Report
-                  if (widget.adminProvider.reports.isNotEmpty)
-                    _buildDownloadOption(
-                      context: context,
-                      icon: Icons.insert_drive_file,
-                      title: 'Download Laporan Pertama',
-                      description: 'Unduh laporan pertama dalam daftar',
-                      isLoading:
-                          _isLoading &&
-                          _currentAction == 'download laporan tunggal',
-                      onTap:
-                          () => _handleDownload(
-                            () => widget.adminProvider.downloadSingleReport(
-                              widget.adminProvider.reports[0],
-                            ),
-                            'download laporan tunggal',
-                          ),
-                    ),
+                  // ... kode sebelumnya ...
+
+                  // ... kode setelahnya ...
                 ],
               ),
             ),
