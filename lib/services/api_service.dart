@@ -425,6 +425,7 @@ class APIService {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
+        _logger.log('Response Data: $responseData');
         return ResponseModel.fromJson(responseData);
       } else {
         return ResponseModel(

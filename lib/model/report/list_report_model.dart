@@ -136,9 +136,9 @@ class ListLaporanModel {
       userId: json['user_id'] as int? ?? 0,
       useridMelihat: json['userid_melihat'] as int?,
       violenceCategoryDetail:
-          json['violence_category'] != null
+          json['violence_category_detail'] != null
               ? ViolenceCategory.fromJson(
-                json['violence_category'] as Map<String, dynamic>,
+                json['violence_category_detail'] as Map<String, dynamic>,
               )
               : ViolenceCategory(
                 id: 0,
