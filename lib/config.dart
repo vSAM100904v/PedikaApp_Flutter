@@ -5,7 +5,7 @@ class Config {
   // static const String apiUrl =
   //     "https://backend-pedika-app-golang-production-5377.up.railway.app";
   // ! For Devlopment Server
-  static const String apiUrl = "http://192.168.1.80:8080";
+  static const String apiUrl = "http://192.168.1.126:8080";
   // static const String apiUrl = "http://192.168.100.49:8080";
   static const String AREA_API =
       "https://emsifa.github.io/api-wilayah-indonesia/api/";
@@ -58,7 +58,7 @@ class Config {
   static const String editProfil = "/api/masyarakat/edit-profile";
 
   static const String getContent = "/api/publik-content";
-
+  static const String getEventContent = "/api/publik-event";
   // Endpoint tambahan untuk emergency contacts dan donations
   static const String emergencyContactAPI = "/api/admin/emergency-contact";
   static const String editEmergencyContactAPI =

@@ -22,6 +22,7 @@ import 'package:pa2_kelompok07/model/report/report_response_model.dart';
 import 'package:pa2_kelompok07/provider/user_provider.dart';
 import 'package:pa2_kelompok07/services/shared_service.dart';
 import 'package:provider/provider.dart';
+import 'package:pa2_kelompok07/model/event_model.dart';
 
 import '../model/auth/login_request_model.dart';
 import '../model/content_model.dart';
@@ -1336,6 +1337,27 @@ class APIService {
       throw Exception('Failed to send FCM token: ${response.statusCode}');
     } else {
       throw Exception('Gagal mengambil data kontak darurat');
+    }
+  }
+
+  Future<List<Event>> fetchEvents() async {
+    final response = await http.get(
+      Uri.parse('${Config.apiUrl}${Config.getEventContent}'),
+    );
+
+    if (response.statusCode == 200) {
+      var data = jsonDecode(response.body);
+
+      if (data['code'] == 200) {
+        List<dynamic> eventsJson = data['Data'];
+        List<Event> events =
+            eventsJson.map((json) => Event.fromJson(json)).toList();
+        return events;
+      } else {
+        throw Exception('Failed to load event data: ${data['message']}');
+      }
+    } else {
+      throw Exception('Failed to reach the server');
     }
   }
 }
