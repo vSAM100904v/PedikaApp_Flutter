@@ -11,6 +11,8 @@ import 'package:pa2_kelompok07/carousel/carousel_loading.dart';
 import 'package:pa2_kelompok07/styles/color.dart';
 
 import '../provider/user_provider.dart';
+import '../screens/dpmdppa/report_screen.dart';
+import '../screens/profile/profile_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -61,6 +63,7 @@ class _HomePageState extends State<HomePage> with TextLogger {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Icon Notifikasi
                 Consumer<UserProvider>(
                   builder:
                       (context, provider, _) => Badge(
@@ -75,6 +78,13 @@ class _HomePageState extends State<HomePage> with TextLogger {
                               ).pushNamed('/notifikasi'),
                         ),
                       ),
+                ),
+
+                // Icon Profile/Akun
+                IconButton(
+                  icon: const Icon(Icons.account_circle),
+                  color: AppColors.white,
+                  onPressed: () => Navigator.of(context).pushNamed('/profile'),
                 ),
               ],
             ),
@@ -101,13 +111,20 @@ class _HomePageState extends State<HomePage> with TextLogger {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColor.primaryColor,
-        tooltip: 'Increment',
+        tooltip: 'Panggil Telepon',
         onPressed: () async {
-          const url = 'tel:081262135011';
-          if (await canLaunch(url)) {
-            await launch(url);
-          } else {
-            throw 'Could not launch $url';
+          final Uri telUri = Uri(scheme: 'tel', path: '081360681103');
+          try {
+            // Langsung coba launch, tanpa canLaunchUrl
+            bool didLaunch = await launchUrl(
+              telUri,
+              mode: LaunchMode.platformDefault,
+            );
+            if (!didLaunch) {
+              debugLog('Gagal membuka dialer: $telUri');
+            }
+          } catch (e) {
+            debugLog('Exception saat membuka dialer: $e');
           }
         },
         child: const Icon(Icons.call, color: Colors.white, size: 28),

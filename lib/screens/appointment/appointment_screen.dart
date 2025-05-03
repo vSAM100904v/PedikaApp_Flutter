@@ -213,7 +213,7 @@ class _AppointmentPageState extends State<AppointmentPage> {
       return Scaffold(
         appBar: AppBar(
           title: Text(
-            "Permintaan Pertemuannnn",
+            "Permintaan Janji Temu",
             style: TextStyle(
               color: AppColor.descColor,
               fontSize: 17,
@@ -311,7 +311,7 @@ class _AppointmentPageState extends State<AppointmentPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Permintaan Pertemuannn",
+          "Permintaan Pertemuan",
           style: TextStyle(
             color: AppColor.descColor,
             fontSize: 17,
@@ -354,7 +354,7 @@ class _AppointmentPageState extends State<AppointmentPage> {
             onPressed: () {
               Navigator.of(context).pushNamed('/prosedur-janji-temu');
             },
-            icon: const Icon(Icons.question_mark, color: Colors.white),
+            icon: const Icon(Icons.live_help_rounded, color: Colors.white),
           ),
         ],
       ),

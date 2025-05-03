@@ -1,9 +1,9 @@
-
 import 'dart:ui';
 
 class AppColor {
-  static Color homePageBackground = const Color(0xFFFFFFFF);
-  static Color descColor = const Color(0xFFFFFFFF);
-  static Color primaryColor = const Color(0xFF696CFF);
-  static Color dangerColor = const Color(0xFFFF0000);
+  static const Color homePageBackground = Color(0xFFFFFFFF);
+  static const Color descColor = Color(0xFFFFFFFF);
+  static const Color primaryColor = Color(0xFF57CC99); // diperbaiki
+  static const Color dangerColor = Color(0xFFFF0000);
+  static const Color darkGreen = Color(0xFF22577a);
 }

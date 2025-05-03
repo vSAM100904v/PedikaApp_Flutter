@@ -170,6 +170,90 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     const SizedBox(height: 10),
+
+                    // 1. edit profil
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).pushNamed('/edit-profile');
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        width: MediaQuery.sizeOf(context).width,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: const BorderRadius.all(
+                            Radius.circular(10),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              spreadRadius: 5,
+                              blurRadius: 7,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.person_outline, color: Colors.black),
+                            SizedBox(width: 10),
+                            Text(
+                              'Edit Akun',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // 2. riwayat Laporan--
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).pushNamed('/edit-password');
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        width: MediaQuery.sizeOf(context).width,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: const BorderRadius.all(
+                            Radius.circular(10),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              spreadRadius: 5,
+                              blurRadius: 7,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.lock_outline, color: Colors.black),
+                            SizedBox(width: 10),
+                            Text(
+                              'Edit Password',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // 2. riwayat Laporan--
                     GestureDetector(
                       onTap: () {
                         Navigator.of(context).pushNamed('/laporan');
@@ -194,10 +278,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.note_outlined, color: Colors.black),
+                            Icon(Icons.history, color: Colors.black),
                             SizedBox(width: 10),
                             Text(
-                              'Laporan Anda',
+                              'Riwayat Laporan Anda',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontFamily: 'Poppins',
@@ -208,6 +292,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                     ),
+
+                    // Janji Temu
                     const SizedBox(height: 10),
                     GestureDetector(
                       onTap: () {

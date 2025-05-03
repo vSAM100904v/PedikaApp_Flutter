@@ -53,7 +53,7 @@ class _CarouselLoadingState extends State<CarouselLoading> {
                   bottomRight: Radius.circular(30),
                 ),
               ),
-              padding: const EdgeInsets.fromLTRB(25, 60, 25, 40),
+              padding: const EdgeInsets.fromLTRB(5, 60, 25, 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

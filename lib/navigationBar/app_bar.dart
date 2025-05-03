@@ -29,11 +29,8 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
               Text(
-                "Gilbert Marpaung",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColor.descColor,
-                ),
+                "Samuel Sitorus",
+                style: TextStyle(fontSize: 16, color: AppColor.descColor),
               ),
             ],
           ),
@@ -41,13 +38,19 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                icon: Icon(Icons.notifications_none, color: Colors.white, size: 30,),
+                icon: Icon(
+                  Icons.notifications_none,
+                  color: Colors.white,
+                  size: 30,
+                ),
                 onPressed: () {
                   print("Gilbert");
                 },
               ),
               CircleAvatar(
-                backgroundImage: NetworkImage('https://random.imagecdn.app/500/150'),
+                backgroundImage: NetworkImage(
+                  'https://random.imagecdn.app/500/150',
+                ),
               ),
             ],
           ),
