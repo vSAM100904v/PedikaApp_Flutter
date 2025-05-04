@@ -2,17 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:pa2_kelompok07/config.dart';
 import 'package:pa2_kelompok07/core/helpers/logger/text_logger.dart';
 import 'package:pa2_kelompok07/core/helpers/toasters/toast.dart';
 import 'package:pa2_kelompok07/screens/dpmdppa/report_screen.dart';
 import 'package:pa2_kelompok07/styles/color.dart';
 import 'package:http/http.dart' as http;
-
 import '../../model/report/report_category_model.dart';
 import '../../model/wilayah/pelaporan/cities.dart';
 import '../../model/wilayah/pelaporan/districts.dart';
@@ -23,6 +19,9 @@ import '../../services/api_service.dart';
 import '../../utils/loading_dialog.dart';
 import '../beranda_screen.dart';
 import '../profile/profile_screen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:get/get.dart';
+import 'package:pa2_kelompok07/config.dart';
 
 class FormReportDPMADPPA extends StatefulWidget {
   const FormReportDPMADPPA({Key? key}) : super(key: key);
@@ -598,28 +597,106 @@ class _FormReportDPMADPPAState extends State<FormReportDPMADPPA>
   List<Step> getSteps() => [
     Step(
       title: const Text(''),
-      content: ListView.builder(
-        shrinkWrap: true,
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
-          final category = categories[index];
-          return ListTile(
-            title: Text(category.categoryName!),
-            leading: const Icon(Icons.category),
-            selected: selectedCategoryId == category.id,
-            onTap: () {
-              _onStepContinue();
-              setState(() {
-                selectedCategoryId = category.id;
-                print(selectedCategoryId);
-              });
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          const Text(
+            'Silakan pilih satu kategori di bawah:',
+            style: TextStyle(fontSize: 14, color: Colors.grey),
+          ),
+          const SizedBox(height: 16),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2, // dua kolom
+              mainAxisSpacing: 16, // jarak vertikal
+              crossAxisSpacing: 16, // jarak horizontal
+              childAspectRatio: 0.75, // proporsi tinggi/lebar
+            ),
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              final isSelected = selectedCategoryId == category.id;
+
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                decoration: BoxDecoration(
+                  color:
+                      isSelected
+                          ? Theme.of(context).primaryColor.withOpacity(0.1)
+                          : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color:
+                        isSelected
+                            ? Theme.of(context).primaryColor
+                            : Colors.transparent,
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () {
+                      setState(() {
+                        selectedCategoryId = category.id;
+                      });
+                      _onStepContinue();
+                    },
+                    child: Column(
+                      children: [
+                        // Image dengan aspect ratio yang konsisten
+                        AspectRatio(
+                          aspectRatio: 4 / 3,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(16),
+                            ),
+                            child: FadeInImage.assetNetwork(
+                              placeholder: 'assets/placeholder.png',
+                              image: category.image!,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+
+                        // Spacer agar teks selalu berada di bagian bawah
+                        const SizedBox(height: 12),
+
+                        // Nama kategori
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            category.categoryName ?? '',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color:
+                                  isSelected
+                                      ? Theme.of(context).primaryColor
+                                      : Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
             },
-            tileColor:
-                selectedCategoryId == category.id
-                    ? Colors.blue[100]
-                    : Colors.white,
-          );
-        },
+          ),
+        ],
       ),
       state: stepState(0),
       isActive: currentStep >= 0,

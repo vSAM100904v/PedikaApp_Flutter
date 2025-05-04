@@ -4,6 +4,7 @@ import 'package:pa2_kelompok07/styles/color.dart';
 import '../screens/beranda_screen.dart';
 import '../screens/dpmdppa/report_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/appointment/appointment_screen.dart';
 
 class BottomNavigationWidget extends StatefulWidget {
   final int initialIndex;
@@ -12,7 +13,12 @@ class BottomNavigationWidget extends StatefulWidget {
   const BottomNavigationWidget({
     Key? key,
     this.initialIndex = 0,
-    this.pages = const <Widget>[HomePage(), ReportScreen(), ProfilePage()],
+    this.pages = const <Widget>[
+      HomePage(),
+      ReportScreen(),
+      SizedBox(),
+      AppointmentPage(),
+    ],
   }) : super(key: key);
 
   @override
@@ -38,26 +44,76 @@ class _BottomNavigationWidgetState extends State<BottomNavigationWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(child: widget.pages.elementAt(_selectedIndex)),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Beranda',
+      bottomNavigationBar: Container(
+        height: 85, // Increased height
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            label: 'LAPOR!',
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_circle_outlined),
-            label: 'Profil',
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            selectedItemColor: AppColor.primaryColor,
+            unselectedItemColor: AppColor.darkGreen,
+            selectedFontSize: 14, // Increased font size
+            unselectedFontSize: 14, // Increased font size
+            iconSize: 28, // Increased icon size
+            items: const <BottomNavigationBarItem>[
+              // 1. Beranda
+              BottomNavigationBarItem(
+                icon: Padding(
+                  padding: EdgeInsets.only(bottom: 4),
+                  child: Icon(Icons.home_rounded),
+                ),
+                label: 'Beranda',
+              ),
+
+              // 2. Laporan
+              BottomNavigationBarItem(
+                icon: Padding(
+                  padding: EdgeInsets.only(bottom: 4),
+                  child: Icon(Icons.description_outlined),
+                ),
+                label: 'Laporan',
+              ),
+
+              // 3. Donasi
+              BottomNavigationBarItem(
+                icon: Padding(
+                  padding: EdgeInsets.only(bottom: 4),
+                  child: Icon(Icons.favorite_outline_rounded),
+                ),
+                label: 'Donasi',
+              ),
+
+              // 4. Janji Temu
+              BottomNavigationBarItem(
+                icon: Padding(
+                  padding: EdgeInsets.only(bottom: 4),
+                  child: Icon(Icons.calendar_today_outlined),
+                ),
+                label: 'Janji Temu',
+              ),
+            ],
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
           ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: AppColor.primaryColor,
-        backgroundColor: Colors.white,
-        onTap: _onItemTapped,
+        ),
       ),
     );
   }

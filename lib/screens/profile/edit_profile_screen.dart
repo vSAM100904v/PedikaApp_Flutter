@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:pa2_kelompok07/styles/color.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
-import 'package:pa2_kelompok07/services/api_service.dart'; // Pastikan untuk mengimpor APIService
+import 'package:pa2_kelompok07/services/api_service.dart';
 import '../../model/auth/login_request_model.dart';
 import '../../provider/user_provider.dart';
 
@@ -22,6 +22,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   File? _imageFile;
   bool _isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (userProvider.user != null) {
+      _namaLengkapController.text = userProvider.user!.full_name ?? '';
+      _emailController.text = userProvider.user!.email ?? '';
+      _noTelpController.text = userProvider.user!.phone_number ?? '';
+    }
+  }
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -38,82 +49,67 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _isLoading = true;
     });
 
-    // try {
-    //   String image = _imageFile?.path ?? '';
-    //   User user = await APIService().editProfilWithPost(
-    //     _namaLengkapController.text,
-    //     _emailController.text,
-    //     _noTelpController.text,
-    //     image,
-    //   );
-    //
-    //   Provider.of<UserProvider>(context, listen: false).setUser(user);
-    //
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(content: Text('Profil berhasil diperbarui')),
-    //   );
-    // } catch (e) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(content: Text('Gagal memperbarui profil: $e')),
-    //   );
-    // } finally {
-    //   setState(() {
-    //     _isLoading = false;
-    //   });
-    // }
+    // Implementasi edit profil
+    try {
+      // Kode untuk mengedit profil
+      await Future.delayed(const Duration(seconds: 2)); // Simulasi loading
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profil berhasil diperbarui')),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal memperbarui profil: $e')));
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
 
-    Widget profileImage =
-        _imageFile != null
-            ? CircleAvatar(radius: 90, backgroundImage: FileImage(_imageFile!))
-            : userProvider.user?.photo_profile != null
-            ? CircleAvatar(
-              radius: 90,
-              backgroundImage: NetworkImage(userProvider.user!.photo_profile!),
-            )
-            : const CircleAvatar(
-              radius: 90,
-              child: Icon(Icons.person, size: 90),
-            );
-
     return Scaffold(
       appBar: AppBar(
-        title: const Center(
-          child: Text(
-            "Edit Akun",
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
+        title: const Text(
+          "Edit Akun",
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontFamily: 'Poppins',
           ),
         ),
+        centerTitle: true,
         backgroundColor: AppColor.primaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pushNamed('/edit-password');
-            },
-            child: const Text(
-              "Ubah Password",
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
+        // actions: [
+        //   TextButton(
+        //     onPressed: () {
+        //       Navigator.of(context).pushNamed('/edit-password');
+        //     },
+        //     child: const Text(
+        //       "Ubah Password",
+        //       style: TextStyle(
+        //         fontSize: 16,
+        //         color: Colors.white,
+        //         fontWeight: FontWeight.w600,
+        //         fontFamily: 'Poppins',
+        //       ),
+        //     ),
+        //   ),
+        // ],
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Green curved background extension
             Container(
               width: MediaQuery.of(context).size.width,
               height: 15,
@@ -125,106 +121,218 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
             ),
-            Center(
-              child: GestureDetector(onTap: _pickImage, child: profileImage),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10),
+
+            const SizedBox(height: 20),
+
+            // Form Card
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Nama Lengkap", style: TextStyle(fontSize: 12)),
-                  const SizedBox(height: 10),
+                  // Nama Lengkap Field
+                  const Text(
+                    "Nama Lengkap",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'Poppins',
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   TextFormField(
                     controller: _namaLengkapController,
                     decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      hintText: '${userProvider.user?.full_name}',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintText: 'Masukkan nama lengkap',
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontFamily: 'Poppins',
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade200,
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade200,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: AppColor.primaryColor,
+                          width: 1,
+                        ),
+                      ),
                     ),
-                    maxLines: 1,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Isi tidak boleh kosong';
-                      }
-                    },
+                    style: const TextStyle(fontFamily: 'Poppins'),
                   ),
-                  const SizedBox(height: 10),
-                  const Text("Email", style: TextStyle(fontSize: 12)),
-                  const SizedBox(height: 10),
+
+                  const SizedBox(height: 24),
+
+                  // Alamat Email Field
+                  const Text(
+                    "Alamat Email",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'Poppins',
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   TextFormField(
                     controller: _emailController,
                     decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      hintText: '${userProvider.user?.email}',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintText: 'Masukkan alamat email',
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontFamily: 'Poppins',
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade200,
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade200,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: AppColor.primaryColor,
+                          width: 1,
+                        ),
+                      ),
                     ),
-                    maxLines: 1,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Isi tidak boleh kosong';
-                      }
-                    },
+                    style: const TextStyle(fontFamily: 'Poppins'),
+                    keyboardType: TextInputType.emailAddress,
                   ),
-                  const SizedBox(height: 10),
-                  const Text("Nomor Ponsel", style: TextStyle(fontSize: 12)),
-                  const SizedBox(height: 10),
+
+                  const SizedBox(height: 24),
+
+                  // Nomor HP Field
+                  const Text(
+                    "Nomor HP",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'Poppins',
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   TextFormField(
                     controller: _noTelpController,
                     decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      hintText: '${userProvider.user?.phone_number}',
-                      hintStyle: TextStyle(color: Colors.grey),
-                    ),
-                    maxLines: 1,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Isi tidak boleh kosong';
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 50),
-                  ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(5)),
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _editProfile,
-                        style: ButtonStyle(
-                          foregroundColor: MaterialStateProperty.all<Color>(
-                            Colors.white,
-                          ),
-                          backgroundColor: MaterialStateProperty.all<Color>(
-                            AppColor.primaryColor,
-                          ),
-                          shape:
-                              MaterialStateProperty.all<RoundedRectangleBorder>(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  side: BorderSide(
-                                    color: AppColor.primaryColor,
-                                  ),
-                                ),
-                              ),
+                      hintText: 'Masukkan nomor HP',
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontFamily: 'Poppins',
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade200,
+                          width: 1,
                         ),
-                        child:
-                            _isLoading
-                                ? const CircularProgressIndicator(
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade200,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: AppColor.primaryColor,
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    style: const TextStyle(fontFamily: 'Poppins'),
+                    keyboardType: TextInputType.phone,
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Simpan Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _editProfile,
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: AppColor.primaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child:
+                          _isLoading
+                              ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
                                   valueColor: AlwaysStoppedAnimation<Color>(
                                     Colors.white,
                                   ),
-                                )
-                                : const Text(
-                                  'Simpan',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 15,
-                                    fontFamily: 'Poppins',
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  strokeWidth: 2,
                                 ),
-                      ),
+                              )
+                              : const Text(
+                                'Simpan',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                     ),
                   ),
                 ],

@@ -5,7 +5,7 @@ class Config {
   // static const String apiUrl =
   //     "https://backend-pedika-app-golang-production-5377.up.railway.app";
   // ! For Devlopment Server
-  static const String apiUrl = "http://192.168.1.126:8080";
+  static const String apiUrl = "http://172.30.40.85:8080";
   // static const String apiUrl = "http://192.168.100.49:8080";
   static const String AREA_API =
       "https://emsifa.github.io/api-wilayah-indonesia/api/";
